@@ -1,285 +1,763 @@
 <!-- データ表示・範囲選択ページ -->
-<div class="max-w-7xl mx-auto">
-  
-  <!-- 1. ヘッダー (パンくずリストとタイトル) -->
-  <div class="mb-4">
-    <%= link_to "ダッシュボード", root_path, class: "text-blue-600 hover:underline" %>
-    <span class="text-gray-500 mx-2">/</span>
-    <%= link_to @parent_project.name, parent_project_path(@parent_project), class: "text-blue-600 hover:underline" %>
-    <span class="text-gray-500 mx-2">/</span>
-    <span class="font-semibold text-gray-800"><%= @project.name %></span>
-  </div>
-
-  <h1 class="text-3xl font-bold text-gray-900 mb-6">
-    照合実行: <%= @project.name %>
-  </h1>
-
-  <!-- 2. ファイル選択エリア -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-    <!-- 資料Aの選択 -->
-    <div class="bg-white p-4 rounded-lg shadow">
-      <label for="file_a" class="block text-sm font-medium text-gray-700 mb-2">資料A (比較元)</label>
-      <select id="file_a" name="file_a" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-        <option value="">アップロード済みファイルから選択...</option>
-        <% @files.each do |file| %>
-          <option value="<%= rails_blob_path(file) %>" data-filename="<%= file.filename.to_s %>">
-            <%= file.filename.to_s %> (<%= number_to_human_size(file.blob.byte_size) %>)
-          </option>
-        <% end %>
-      </select>
-    </div>
-    <!-- 資料Bの選択 -->
-    <div class="bg-white p-4 rounded-lg shadow">
-      <label for="file_b" class="block text-sm font-medium text-gray-700 mb-2">資料B (比較先)</label>
-      <select id="file_b" name="file_b" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-        <option value="">アップロード済みファイルから選択...</option>
-        <% @files.each do |file| %>
-          <option value="<%= rails_blob_path(file) %>" data-filename="<%= file.filename.to_s %>">
-            <%= file.filename.to_s %> (<%= number_to_human_size(file.blob.byte_size) %>)
-          </option>
-        <% end %>
-      </select>
+<!-- 1. ヘッダー: プロジェクト名と親へのリンク -->
+<div class="bg-white shadow-sm border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div class="flex justify-between items-center">
+      <div>
+        <!-- 親プロジェクトへのパンくずリスト -->
+        <%# @parent_project は ProjectsController#show で設定されます %>
+        <%= link_to @parent_project.name, parent_project_path(@parent_project), class: "text-sm font-medium text-gray-500 hover:text-gray-700" %>
+        
+        <h1 class="text-2xl font-bold text-gray-900 mt-1">
+          <%= @project.name %>
+        </h1>
+        
+        <p class="text-sm text-gray-600 mt-1">
+          ステータス: <span class="font-medium text-yellow-600"><%= @project.status || '未実行' %></span>
+          <span class="mx-2 text-gray-300">|</span>
+          最終実行: <%= @project.last_run ? @project.last_run.strftime('%Y/%m/%d %H:%M') : 'N/A' %>
+        </p>
+      </div>
+      <div>
+        <!-- TODO: 将来的に「編集」ボタンなどを設置 -->
+        <%#= link_to "設定編集", edit_parent_project_project_path(@parent_project, @project), class: "py-2 px-4 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm font-medium" %>
+      </div>
     </div>
   </div>
+</div>
 
-  <!-- 3. 照合コントロールエリア -->
-  <div class="bg-white p-4 rounded-lg shadow mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-    <!-- テンプレート選択 -->
-    <div class="w-full sm:w-auto">
-      <label for="template_select" class="block text-sm font-medium text-gray-700 mb-1">照合パターン (テンプレート)</label>
-      <select id="template_select" class="w-full sm:w-64 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-        <option value="none">テンプレートを使用しない</option>
-        <!-- TODO: テンプレート機能を実装 -->
-        <!-- 
-        <%# @templates.each do |template| %>
-          <option value="<%#= template.id %>"><%#= template.name %></option>
-        <%# end %>
-        -->
-        <option value="dummy_1">ダミーテンプレート1 (KPI)</option>
-      </select>
-    </div>
-    
-    <!-- アーカイブ参照 (デモ版の機能) -->
-    <div class="w-full sm:w-auto">
-      <label for="archive_select" class="block text-sm font-medium text-gray-700 mb-1">過去の照合結果を参照</label>
-      <select id="archive_select" class="w-full sm:w-64 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-        <option value="none">参照しない</option>
-        <!-- TODO: アーカイブ機能を実装 -->
-        <option value="dummy_archive_1">ダミー過去結果1</option>
-      </select>
+<!-- 2. メインコンテンツ: 照合設定とプレビュー -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+
+    <!-- 2-1. ファイル選択 -->
+    <div class="mb-6 pb-6 border-b border-gray-200">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">1. 照合対象ファイルの選択</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="file_a_select" class="block text-sm font-medium text-gray-700 mb-1">資料A (比較元)</label>
+          <!-- @files (親が持つファイル一覧) は ProjectsController#show で設定されます -->
+          <select id="file_a_select" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 border">
+            <option value="">ファイルを選択してください</option>
+            <% @files.each do |file| %>
+              <%# TODO: ActiveStorage の URL を取得する方法 (rails_blob_path) が正しいか確認 %>
+              <option value="<%= rails_blob_path(file) %>" data-filename="<%= file.filename.to_s %>"><%= file.filename.to_s %></option>
+            <% end %>
+          </select>
+        </div>
+        <div>
+          <label for="file_b_select" class="block text-sm font-medium text-gray-700 mb-1">資料B (比較先)</label>
+          <select id="file_b_select" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 border">
+            <option value="">ファイルを選択してください</option>
+            <% @files.each do |file| %>
+              <option value="<%= rails_blob_path(file) %>" data-filename="<%= file.filename.to_s %>"><%= file.filename.to_s %></option>
+            <% end %>
+          </select>
+        </div>
+      </div>
+      <div class="mt-4 text-center">
+        <!-- TODO: 本番では、ファイルが選択されたらExcel/CSVを読み込みプレビューする -->
+        <button id="load-preview-btn" onclick="simulateFileSelection()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-5 rounded-lg font-medium shadow-md transition duration-150 ease-in-out">
+          プレビュー表示
+        </button>
+        <p class="text-xs text-gray-500 mt-2">（※ 現在はダミーデータを表示します）</p>
+      </div>
     </div>
 
-    <!-- 照合実行ボタン -->
-    <div class="w-full sm:w-auto pt-5">
-      <button id="start-comparison" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">
-        <svg class="w-5 h-5 inline-block mr-2 -mt-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v2.5h-2.5a.75.75 0 000 1.5h2.5v2.5a.75.75 0 001.5 0v-2.5h2.5a.75.75 0 000-1.5h-2.5v-2.5z" clip-rule="evenodd" />
-        </svg>
+    <!-- 2-2. 照合パターン選択 & 範囲指定 -->
+    <div class="mb-6 pb-6 border-b border-gray-200">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">2. 照合パターン選択 & 範囲指定</h2>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        
+        <!-- テンプレート選択 (Fetchで動的に読み込む) -->
+        <div>
+          <label for="template-select" class="block text-sm font-medium text-gray-700 mb-1">テンプレートを選択</label>
+          <select id="template-select" class="border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 p-3 border">
+            <!-- JavaScript (loadTemplates) によって動的に <option> が挿入されます -->
+            <option value="">テンプレートを選択...</option>
+          </select>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <!-- TODO: 過去の照合結果（アーカイブ）を参照する機能 -->
+          <button id="reset-selection-btn" onclick="resetSelectionMode()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium">
+            範囲指定リセット
+          </button>
+          <button id="toggle-selection-mode-btn" onclick="toggleSelectionMode()" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg font-medium shadow-md">
+            範囲指定モード開始
+          </button>
+        </div>
+      </div>
+      <p id="selection-status-a" class="text-sm text-gray-600 mt-2">資料A: 0 セル選択中</p>
+      <p id="selection-status-b" class="text-sm text-gray-600 mt-2">資料B: 0 セル選択中</p>
+    </div>
+
+    <!-- 2-3. 照合実行 -->
+    <div class="text-center mb-6">
+      <button id="start-comparison-btn" onclick="startComparison()" class="bg-green-600 hover:bg-green-700 text-white text-lg font-semibold py-3 px-8 rounded-lg shadow-lg transition duration-150 ease-in-out">
         照合実行
       </button>
     </div>
-  </div>
-  
-  <!-- 4. 比較プレビューエリア -->
-  <div id="comparison-area" class="comparison-area grid grid-cols-1 md:grid-cols-2 gap-6">
-    <!-- 資料A プレビュー (ダミーデータ) -->
-    <div id="preview-A" class="doc-view bg-white p-4 rounded-lg shadow-inner border border-gray-200 min-h-[400px]">
-      <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3">資料A: (ファイル未選択)</h3>
-      <table class="w-full text-sm text-left text-gray-500">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-          <tr>
-            <th scope="col" class="px-4 py-2">項目</th>
-            <th scope="col" class="px-4 py-2">目標</th>
-            <th scope="col" class="px-4 py-2">結果</th>
-          </tr>
-        </thead>
-        <tbody id="table-A">
-          <!-- TODO: ファイルが選択されたらここに内容を表示 -->
-          <% @dummy_data_a.each_with_index do |row, index| %>
-            <tr class="bg-white border-b comparable-cell" data-row-id-a="<%= index %>" data-key="<%= row[:key] %>">
-              <td class="px-4 py-2 font-medium text-gray-900"><%= row[:key] %></td>
-              <td class="px-4 py-2"><%= row[:goal] %></td>
-              <td class="px-4 py-2"><%= row[:result] %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
 
-    <!-- 資料B プレビュー (ダミーデータ) -->
-    <div id="preview-B" class="doc-view bg-white p-4 rounded-lg shadow-inner border border-gray-200 min-h-[400px]">
-      <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3">資料B: (ファイル未選択)</h3>
-      <table class="w-full text-sm text-left text-gray-500">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-          <tr>
-            <th scope="col" class="px-4 py-2">項目</th>
-            <th scope="col" class="px-4 py-2">目標</th>
-            <th scope="col" class="px-4 py-2">結果</th>
-          </tr>
-        </thead>
-        <tbody id="table-B">
-          <!-- TODO: ファイルが選択されたらここに内容を表示 -->
-           <% @dummy_data_b.each_with_index do |row, index| %>
-            <tr class="bg-white border-b comparable-cell" data-row-id-b="<%= index %>" data-key="<%= row[:key] %>">
-              <td class="px-4 py-2 font-medium text-gray-900"><%= row[:key] %></td>
-              <td class="px-4 py-2"><%= row[:goal] %></td>
-              <td class="px-4 py-2"><%= row[:result] %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+    <!-- 2-4. 照合結果サマリー (照合実行後に表示) -->
+    <div id="result-summary" class="hidden bg-gray-50 p-6 rounded-lg border border-gray-200">
+      <h3 class="text-lg font-semibold text-gray-800 mb-3">照合結果サマリー</h3>
+      <div class="flex justify-between items-center">
+        <div>
+          <p id="diff-count" class="text-2xl font-bold text-red-600">差異: 0件</p>
+          <p id="match-count" class="text-lg text-green-600">一致: 0件</p>
+          <p id="unmatched-a-count" class="text-lg text-yellow-600">資料Aのみ: 0件</p>
+          <p id="unmatched-b-count" class="text-lg text-yellow-600">資料Bのみ: 0件</p>
+        </div>
+        <div class="flex flex-col space-y-3">
+          <button id="export-result-btn" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium">
+            結果エクスポート (CSV)
+          </button>
+          <!-- テンプレート保存機能 (Fetch POST) -->
+          <button id="save-template-btn" onclick="openSaveTemplateModal()" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg font-medium">
+            選択範囲をテンプレートに保存
+          </button>
+          <!-- TODO: アーカイブ（証跡）保存機能 -->
+          <button id="archive-result-btn" class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium">
+            証跡としてアーカイブ保存
+          </button>
+        </div>
+      </div>
     </div>
   </div>
-
-  <!-- 5. 照合結果サマリー (初期状態では非表示) -->
-  <div id="result-summary" class="hidden mt-6 bg-white p-6 rounded-lg shadow-lg border-t-4 border-blue-500">
-    <h2 class="text-2xl font-bold text-gray-900 mb-4">照合結果サマリー</h2>
-    <div id="summary-content" class="text-lg">
-      <!-- (照合実行後にJavaScriptで内容が挿入される) -->
-    </div>
-    <div class="mt-6 flex gap-4">
-      <button id="save-archive-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
-        証跡として保存 (アーカイブ)
-      </button>
-      <button id="save-template-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
-        選択範囲をテンプレートに保存
-      </button>
-      <button id="export-button" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg shadow-md">
-        結果エクスポート (CSV)
-      </button>
-    </div>
-  </div>
-
 </div>
 
-<!-- 照合ロジックとUI制御のためのJavaScript (デモ版のロジックを移植) -->
+<!-- 3. メインコンテンツ: 比較プレビュー -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="comparison-area grid grid-cols-1 md:grid-cols-2 gap-6">
+    
+    <!-- 資料A プレビュー -->
+    <div id="doc-view-a" class="doc-view relative border border-gray-200 p-4 rounded-lg bg-white shadow-sm">
+      <h3 class="text-lg font-semibold mb-4 text-gray-700">資料A プレビュー</h3>
+      <div id="preview-area-a" class="overflow-auto max-h-[600px] relative">
+        <!-- ダミーデータがここに挿入されます -->
+        <table class="w-full border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border p-2 text-left text-gray-600">キー</th>
+              <th class="border p-2 text-left text-gray-600">目標</th>
+              <th class="border p-2 text-left text-gray-600">結果</th>
+            </tr>
+          </thead>
+          <tbody id="dummy-table-a">
+            <!-- JavaScript (generatePreviewTable) によって挿入 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- 資料B プレビュー -->
+    <div id="doc-view-b" class="doc-view relative border border-gray-200 p-4 rounded-lg bg-white shadow-sm">
+      <h3 class="text-lg font-semibold mb-4 text-gray-700">資料B プレビュー</h3>
+      <div id="preview-area-b" class="overflow-auto max-h-[600px] relative">
+        <!-- ダミーデータがここに挿入されます -->
+        <table class="w-full border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border p-2 text-left text-gray-600">キー</th>
+              <th class="border p-2 text-left text-gray-600">目標</th>
+              <th class="border p-2 text-left text-gray-600">結果</th>
+            </tr>
+          </thead>
+          <tbody id="dummy-table-b">
+            <!-- JavaScript (generatePreviewTable) によって挿入 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+
+<!-- モーダル: テンプレート保存 -->
+<div id="template-name-modal" class="modal fixed inset-0 flex items-center justify-center hidden bg-gray-900 bg-opacity-50 z-50">
+  <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all">
+    <h3 class="text-2xl font-bold text-gray-900 mb-4 border-b pb-2">テンプレート新規保存</h3>
+    <p class="mb-4 text-sm text-gray-600">現在の選択範囲（AとB）を保存します。テンプレート名を入力してください。</p>
+    <form id="template-name-form">
+      <div class="mb-4">
+        <label for="template-name" class="block text-sm font-medium text-gray-700 mb-1">テンプレート名</label>
+        <input type="text" id="template-name" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-purple-500 focus:ring-purple-500 p-3 border" placeholder="例: 月次KPI報告">
+      </div>
+      <div class="flex justify-end space-x-3">
+        <button type="button" onclick="closeModal('template-name-modal')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium">キャンセル</button>
+        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
 <!-- 
-  TODO: 本来は app/javascript/controllers/comparison_controller.js などに
-  Stimulus (Hotwire) を使って実装すべきですが、ここではデモ版のロジックを
-  簡略化して <script> タグ内に配置します。
+  ==============================================
+  JavaScript
+  ==============================================
+  - ダミーデータの生成 (コントローラから渡される)
+  - プレビューの生成 (ダミー)
+  - 範囲選択ロジック (デモ版)
+  - 照合実行ロジック (デモ版)
+  - テンプレート機能 (Fetch API)
 -->
 <style>
   /* デモ版のハイライト用CSS */
   .diff-highlight { background-color: #fecaca !important; } /* 赤 (差異) */
   .match-highlight { background-color: #d1fae5 !important; } /* 緑 (一致) */
   .unmatched-highlight { background-color: #fff3cd !important; } /* 黄 (片方のみ) */
-  .template-highlight { background-color: rgba(191, 219, 254, 0.5) !important; } 
-  .comparison-cell-border { border: 2px dashed #ef4444 !important; }
+  
+  /* テンプレート選択（青） */
+  .template-highlight { 
+    background-color: rgba(191, 219, 254, 0.5) !important; /* 青 (選択範囲/テンプレート) */
+    cursor: pointer; /* 選択解除用のカーソル */
+  } 
+
+  /* 照合範囲（赤枠） */
+  .comparison-cell-border {
+    border: 2px dashed #ef4444 !important; /* 赤の点線 */
+  }
+  
+  /* 範囲指定モード中のカーソル */
+  .select-mode-active .doc-view { 
+    border-color: #f59e0b; 
+    border-style: dashed; 
+    border-width: 3px; 
+    cursor: crosshair; /* マウスオーバーでカーソルが変わる */
+  }
 </style>
 
 <script>
+  // --- グローバル変数 ---
+  // 1. コントローラからのデータ (ダミー)
+  // (generate_dummy_data メソッドから渡される)
+  const dummyDataA = <%= raw @dummy_data_a.to_json %>;
+  const dummyDataB = <%= raw @dummy_data_b.to_json %>;
+
+  // 2. 状態管理
+  let isSelectionMode = false;
+  let isDragging = false;
+  let startX, startY;
+  let selectionBoxA = null;
+  let selectionBoxB = null;
+  let selectionCoordsA = { cells: [] }; 
+  let selectionCoordsB = { cells: [] }; 
+  let templatesCache = []; // 読み込んだテンプレートをキャッシュ
+
+  // 3. 要素キャッシュ (DOMContentLoaded で設定)
+  let docViewA, docViewB, previewAreaA, previewAreaB;
+  let tableBodyA, tableBodyB, toggleBtn, templateSelect;
+
+  // --- モーダル制御 (グローバル) ---
+  function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('hidden');
+  }
+  function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.add('hidden');
+  }
+
+  // --- 1. プレビュー表示 (ダミー) ---
+  // (※ 本番ではファイル選択時にExcel/CSVをパースする)
+  function simulateFileSelection() {
+    console.log("プレビュー表示 (ダミー)");
+    generatePreviewTable(dummyDataA, tableBodyA, 'A');
+    generatePreviewTable(dummyDataB, tableBodyB, 'B');
+    // 範囲選択イベントリスナーをセットアップ
+    setupSelectionListeners();
+  }
+  
+  // ダミーデータからテーブルHTMLを生成
+  function generatePreviewTable(data, tableBody, docId) {
+    if (!tableBody) return; // 要素が見つからない場合は終了
+    tableBody.innerHTML = ''; // クリア
+    data.forEach((row, rowIndex) => {
+      const tr = document.createElement('tr');
+      // 3つの主要カラム (key, goal, result) を表示
+      ['key', 'goal', 'result'].forEach((colKey, colIndex) => {
+        const td = document.createElement('td');
+        td.className = 'border p-2 comparable-cell';
+        td.dataset.doc = docId;
+        td.dataset.row = rowIndex; // 0-indexed row
+        td.dataset.col = colIndex; // 0-indexed col
+        // データ本体 (デモ版ではキーをそのままセル内容にする)
+        td.dataset.key = row['key']; // 照合キー
+        td.textContent = row[colKey];
+        tr.appendChild(td);
+      });
+      tableBody.appendChild(tr);
+    });
+  }
+  
+  // --- 2. 範囲選択ロジック (デモ版) ---
+
+  // 範囲指定モードのトグル
+  function toggleSelectionMode() {
+    isSelectionMode = !isSelectionMode;
+    if (isSelectionMode) {
+      docViewA.classList.add('select-mode-active');
+      docViewB.classList.add('select-mode-active');
+      toggleBtn.textContent = '範囲指定モード終了';
+      toggleBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+      toggleBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+    } else {
+      resetSelectionMode();
+    }
+  }
+
+  // 範囲指定のリセット
+  function resetSelectionMode() {
+    isSelectionMode = false;
+    if (docViewA) docViewA.classList.remove('select-mode-active');
+    if (docViewB) docViewB.classList.remove('select-mode-active');
+    if (toggleBtn) {
+      toggleBtn.textContent = '範囲指定モード開始';
+      toggleBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+      toggleBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+    }
+
+    // 範囲指定をリセット
+    selectionCoordsA.cells = [];
+    selectionCoordsB.cells = [];
+    
+    // ハイライトをリセット
+    // (※ 過去の照合結果ハイライト (赤/緑/黄) はリセットしない)
+    document.querySelectorAll('.comparable-cell').forEach(cell => {
+      cell.classList.remove('template-highlight'); // 青ハイライトのみ削除
+      // 照合中の赤枠もリセットする
+      cell.classList.remove('comparison-cell-border');
+    });
+    
+    updateSelectionStatus();
+  }
+  
+  // 選択イベントリスナーのセットアップ
+  function setupSelectionListeners() {
+    [previewAreaA, previewAreaB].forEach(area => {
+      if (!area) return; // 要素が見つからない場合は終了
+      
+      // (mousedown, mousemove, mouseup はデモ版では省略)
+      
+      // クリックによるセル選択
+      area.addEventListener('click', (e) => {
+        if (!isSelectionMode) return;
+        
+        const cell = e.target.closest('.comparable-cell');
+        if (!cell) return;
+
+        const docId = cell.dataset.doc;
+        // 座標を数値として保存
+        const coords = { 
+          row: parseInt(cell.dataset.row, 10), 
+          col: parseInt(cell.dataset.col, 10) 
+        };
+        const selectionCache = (docId === 'A') ? selectionCoordsA : selectionCoordsB;
+
+        // クリックで選択・選択解除
+        const index = selectionCache.cells.findIndex(c => c.row === coords.row && c.col === coords.col);
+        
+        if (index > -1) {
+          // 既に選択済み -> 選択解除
+          selectionCache.cells.splice(index, 1);
+          cell.classList.remove('template-highlight');
+        } else {
+          // 未選択 -> 選択
+          selectionCache.cells.push(coords);
+          cell.classList.add('template-highlight');
+        }
+        updateSelectionStatus();
+      });
+    });
+  }
+
+  // 選択ステータスの更新
+  function updateSelectionStatus() {
+    const statusA = document.getElementById('selection-status-a');
+    const statusB = document.getElementById('selection-status-b');
+    if (statusA) statusA.textContent = `資料A: ${selectionCoordsA.cells.length} セル選択中`;
+    if (statusB) statusB.textContent = `資料B: ${selectionCoordsB.cells.length} セル選択中`;
+  }
+
+  // --- 3. 照合実行ロジック (デモ版) ---
+  
+  function startComparison() {
+    console.log("照合実行 (デモ版ロジック)");
+    
+    // (1) 以前の照合結果ハイライト（赤/緑/黄）をリセット
+    clearAllComparisonHighlights();
+
+    // (2) 照合範囲（選択範囲 or テンプレート）のセルに赤枠（照合中）を適用
+    if (selectionCoordsA.cells.length === 0 || selectionCoordsB.cells.length === 0) {
+      alert("資料Aと資料B、両方の照合範囲を指定（またはテンプレートを適用）してください。");
+      return;
+    }
+    
+    // (3) 照合範囲のセルに赤枠を適用
+    applyComparisonBorders(selectionCoordsA.cells, 'A');
+    applyComparisonBorders(selectionCoordsB.cells, 'B');
+
+    // (4) 照合範囲のデータセットを構築
+    // (キー: dataset.key, 値: textContent)
+    const datasetA = buildDataset(selectionCoordsA.cells, 'A');
+    const datasetB = buildDataset(selectionCoordsB.cells, 'B');
+
+    // (5) 照合ロジック (キーで比較)
+    let diffCount = 0;
+    let matchCount = 0;
+    let unmatchedA = 0;
+    let unmatchedB = 0;
+    
+    const matchedKeysB = new Set();
+
+    datasetA.forEach(itemA => {
+      const itemB = datasetB.find(b => b.key === itemA.key);
+      
+      if (itemB) {
+        // キーが一致 (Bにも存在する)
+        matchedKeysB.add(itemA.key);
+        
+        if (itemA.value === itemB.value) {
+          // 値も一致
+          matchCount++;
+          applyHighlight(itemA.cellRef, 'match-highlight');
+          applyHighlight(itemB.cellRef, 'match-highlight');
+        } else {
+          // 値が不一致 (差異)
+          diffCount++;
+          applyHighlight(itemA.cellRef, 'diff-highlight');
+          applyHighlight(itemB.cellRef, 'diff-highlight');
+        }
+      } else {
+        // キーがAにしか存在しない
+        unmatchedA++;
+        applyHighlight(itemA.cellRef, 'unmatched-highlight');
+      }
+    });
+
+    // Bにしか存在しないキーをカウント
+    datasetB.forEach(itemB => {
+      if (!matchedKeysB.has(itemB.key)) {
+        unmatchedB++;
+        applyHighlight(itemB.cellRef, 'unmatched-highlight');
+      }
+    });
+
+    // (6) 結果サマリーを表示
+    document.getElementById('result-summary').classList.remove('hidden');
+    document.getElementById('diff-count').textContent = `差異: ${diffCount}件`;
+    document.getElementById('match-count').textContent = `一致: ${matchCount}件`;
+    document.getElementById('unmatched-a-count').textContent = `資料Aのみ: ${unmatchedA}件`;
+    document.getElementById('unmatched-b-count').textContent = `資料Bのみ: ${unmatchedB}件`;
+  }
+  
+  // ハイライト適用 (共通)
+  function applyHighlight(cellRef, highlightClass) {
+    if (cellRef) {
+      cellRef.classList.add(highlightClass);
+    }
+  }
+  
+  // 照合範囲の赤枠を適用
+  function applyComparisonBorders(cells, docId) {
+    cells.forEach(coord => {
+      // 座標は数値で保存されている
+      const cell = document.querySelector(`.comparable-cell[data-doc="${docId}"][data-row="${coord.row}"][data-col="${coord.col}"]`);
+      if (cell) {
+        cell.classList.add('comparison-cell-border');
+      }
+    });
+  }
+
+  // 照合データセットを構築 (キーと値)
+  function buildDataset(cells, docId) {
+    const dataset = [];
+    cells.forEach(coord => {
+      // 座標は数値で保存されている
+      const cell = document.querySelector(`.comparable-cell[data-doc="${docId}"][data-row="${coord.row}"][data-col="${coord.col}"]`);
+      if (cell) {
+        dataset.push({
+          key: cell.dataset.key, // 行のキー (dataset.key)
+          value: cell.textContent, // セルの値
+          cellRef: cell // セルDOMへの参照
+        });
+      }
+    });
+    return dataset;
+  }
+  
+  // 照合結果ハイライト（赤/緑/黄）のみをクリア
+  function clearAllComparisonHighlights() {
+    const highlights = ['match-highlight', 'diff-highlight', 'unmatched-highlight'];
+    document.querySelectorAll('.comparable-cell').forEach(cell => {
+      cell.classList.remove(...highlights);
+      // 照合赤枠もクリア
+      cell.classList.remove('comparison-cell-border');
+    });
+  }
+
+
+  // --- 4. テンプレート機能 (Fetch API) ---
+  
+  // (A) 画面ロード時: テンプレート一覧をサーバーから取得
+  // (※ Turbo (Rails 7) は DOMContentLoaded を使わないため、 "turbo:load" を使う)
   document.addEventListener('turbo:load', () => {
     
-    const comparisonArea = document.getElementById('comparison-area');
-    const startButton = document.getElementById('start-comparison');
-    const resultSummary = document.getElementById('result-summary');
-    const summaryContent = document.getElementById('summary-content');
-    const selectA = document.getElementById('file_a');
-    const selectB = document.getElementById('file_b');
-    const previewA = document.getElementById('preview-A');
-    const previewB = document.getElementById('preview-B');
+    // --- 要素キャッシュ ---
+    // (turbo:load のたびに要素を再取得する)
+    docViewA = document.getElementById('doc-view-a');
+    docViewB = document.getElementById('doc-view-b');
+    previewAreaA = document.getElementById('preview-area-a');
+    previewAreaB = document.getElementById('preview-area-b');
+    tableBodyA = document.getElementById('dummy-table-a');
+    tableBodyB = document.getElementById('dummy-table-b');
+    toggleBtn = document.getElementById('toggle-selection-mode-btn');
+    templateSelect = document.getElementById('template-select');
 
-    // ファイル選択ドロップダウンの制御
-    function updatePreviewHeader(selectEl, previewEl) {
-      const selectedOption = selectEl.options[selectEl.selectedIndex];
-      const filename = selectedOption.dataset.filename;
-      const h3 = previewEl.querySelector('h3');
-      if (filename) {
-        h3.textContent = `${previewEl.id.includes('A') ? '資料A' : '資料B'}: ${filename}`;
-        // TODO: ここでファイル内容 (Excel/CSV) をAJAXで読み込み、
-        // @dummy_data_a / @dummy_data_b の代わりにテーブルを描画する
-      } else {
-        h3.textContent = `${previewEl.id.includes('A') ? '資料A' : '資料B'}: (ファイル未選択)`;
-      }
-    }
-
-    if (selectA) selectA.addEventListener('change', () => updatePreviewHeader(selectA, previewA));
-    if (selectB) selectB.addEventListener('change', () => updatePreviewHeader(selectB, previewB));
-
-
-    // --- デモ版の照合ロジック (簡略版) ---
-    if (startButton) {
-      startButton.addEventListener('click', () => {
-        
-        // TODO: 実際には選択されたテンプレート (template_select) に基づき
-        // 比較範囲を決定する
-        
-        // 1. 全てのセルを照合範囲としてマーク (赤枠)
-        const cellsA = document.querySelectorAll('#table-A .comparable-cell');
-        const cellsB = document.querySelectorAll('#table-B .comparable-cell');
-        cellsA.forEach(cell => cell.classList.add('comparison-cell-border'));
-        cellsB.forEach(cell => cell.classList.add('comparison-cell-border'));
-
-        // 2. ハイライトをリセット
-        document.querySelectorAll('.comparable-cell').forEach(cell => {
-          cell.classList.remove('diff-highlight', 'match-highlight', 'unmatched-highlight');
-        });
-
-        // 3. 照合ロジック (Keyベース)
-        const keysA = new Map();
-        cellsA.forEach(cell => {
-          const key = cell.dataset.key;
-          // (簡略化のため、tdの内容全体ではなくkeyのみを比較)
-          keysA.set(key, { cell: cell, content: cell.innerText }); 
-        });
-
-        const keysB = new Map();
-        cellsB.forEach(cell => {
-          const key = cell.dataset.key;
-          keysB.set(key, { cell: cell, content: cell.innerText });
-        });
-
-        let diffCount = 0;
-        let matchCount = 0;
-        let unmatchedA = 0;
-        let unmatchedB = 0;
-
-        // Aを基準にBをチェック
-        keysA.forEach((valueA, keyA) => {
-          if (keysB.has(keyA)) {
-            // Keyが両方にある
-            const valueB = keysB.get(keyA);
-            if (valueA.content === valueB.content) {
-              // 一致
-              valueA.cell.classList.add('match-highlight');
-              valueB.cell.classList.add('match-highlight');
-              matchCount++;
-            } else {
-              // 差異あり
-              valueA.cell.classList.add('diff-highlight');
-              valueB.cell.classList.add('diff-highlight');
-              diffCount++;
-            }
-          } else {
-            // Aにのみ存在
-            valueA.cell.classList.add('unmatched-highlight');
-            unmatchedA++;
-          }
-        });
-
-        // Bを基準にAにないものをチェック
-        keysB.forEach((valueB, keyB) => {
-          if (!keysA.has(keyB)) {
-            // Bにのみ存在
-            valueB.cell.classList.add('unmatched-highlight');
-            unmatchedB++;
-          }
-        });
-
-        // 4. 結果サマリーを表示
-        summaryContent.innerHTML = `
-          <p class="text-red-600 font-semibold">差異あり: ${diffCount} 件</p>
-          <p class="text-green-600">一致: ${matchCount} 件</p>
-          <p class="text-yellow-700">資料Aのみに存在: ${unmatchedA} 件</p>
-          <p class="text-yellow-700">資料Bのみに存在: ${unmatchedB} 件</p>
-          <p class="mt-2 font-bold">合計: ${diffCount + matchCount + unmatchedA + unmatchedB} 項目を照合しました。</p>
-        `;
-        resultSummary.classList.remove('hidden');
-        
-        // TODO: 照合結果をサーバに送信 (Turbo Stream など)
+    // プレビュー表示ボタンが押されるまでダミーデータは表示しない
+    // (※ simulateFileSelection() はボタン押下時にのみ呼ばれる)
+    
+    // テンプレートをロード
+    loadTemplates();
+    
+    // (B) プルダウン変更時: テンプレート適用
+    // (※ turbo:load のたびにリスナーを再設定しないよう、nullチェック)
+    if (templateSelect && !templateSelect.dataset.listenerAttached) {
+      templateSelect.addEventListener('change', (e) => {
+        const selectedTemplateId = e.target.value;
+        if (selectedTemplateId) {
+          applyTemplate(selectedTemplateId);
+        } else {
+          // 「選択してください」に戻した場合 (青ハイライトのみリセット)
+          resetTemplateHighlights();
+        }
       });
+      templateSelect.dataset.listenerAttached = 'true';
     }
     
-    // TODO: アーカイブ保存、テンプレート保存、エクスポート機能の実装
+    // (C) 保存フォーム送信時: テンプレート保存
+    const templateForm = document.getElementById('template-name-form');
+    if (templateForm && !templateForm.dataset.listenerAttached) {
+      templateForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const templateName = document.getElementById('template-name').value;
+        // 現在の選択範囲 (JS変数) を取得
+        const range = {
+          a: selectionCoordsA.cells,
+          b: selectionCoordsB.cells
+        };
+        
+        if (!templateName) {
+          alert("テンプレート名を入力してください。");
+          return;
+        }
+        if (range.a.length === 0 || range.b.length === 0) {
+          alert("資料Aと資料Bの範囲を指定（またはテンプレートを適用）してから保存してください。");
+          return;
+        }
+        
+        saveTemplate(templateName, range);
+      });
+      templateForm.dataset.listenerAttached = 'true';
+    }
+    
+    // (D) プレビュー表示ボタン
+    const previewBtn = document.getElementById('load-preview-btn');
+    if (previewBtn && !previewBtn.dataset.listenerAttached) {
+      previewBtn.onclick = simulateFileSelection; // (onclick属性の代わりにリスナーを設定)
+      previewBtn.dataset.listenerAttached = 'true';
+    }
+    
+    // (E) 範囲指定モードボタン
+    if (toggleBtn && !toggleBtn.dataset.listenerAttached) {
+      toggleBtn.onclick = toggleSelectionMode;
+      toggleBtn.dataset.listenerAttached = 'true';
+    }
+    
+    // (F) 範囲リセットボタン
+    const resetBtn = document.getElementById('reset-selection-btn');
+    if (resetBtn && !resetBtn.dataset.listenerAttached) {
+      resetBtn.onclick = resetSelectionMode;
+      resetBtn.dataset.listenerAttached = 'true';
+    }
+    
+    // (G) 照合実行ボタン
+    const compareBtn = document.getElementById('start-comparison-btn');
+    if (compareBtn && !compareBtn.dataset.listenerAttached) {
+      compareBtn.onclick = startComparison;
+      compareBtn.dataset.listenerAttached = 'true';
+    }
+    
+    // (H) テンプレート保存モーダルを開くボタン
+    const saveTemplateBtn = document.getElementById('save-template-btn');
+    if (saveTemplateBtn && !saveTemplateBtn.dataset.listenerAttached) {
+      saveTemplateBtn.onclick = openSaveTemplateModal;
+      saveTemplateBtn.dataset.listenerAttached = 'true';
+    }
+    
+    // (I) モーダルを閉じるボタン
+    const closeModalBtn = document.querySelector('#template-name-modal button[type="button"]');
+    if (closeModalBtn && !closeModalBtn.dataset.listenerAttached) {
+      closeModalBtn.onclick = () => closeModal('template-name-modal');
+      closeModalBtn.dataset.listenerAttached = 'true';
+    }
+    
+    // (J) その他 (エクスポート, アーカイブ)
+    // ...
   });
+
+  // GET /templates
+  function loadTemplates() {
+    const selectEl = document.getElementById('template-select');
+    if (!selectEl) return; // 要素がなければ何もしない
+
+    // fetch でサーバー (TemplatesController#index) にリクエスト
+    fetch('/templates')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(templates => {
+        // 取得成功
+        templatesCache = templates; // キャッシュに保存
+        
+        // プルダウンをクリア (「選択...」を除く)
+        while (selectEl.options.length > 1) {
+          selectEl.remove(1);
+        }
+        
+        // プルダウンにテンプレートを追加
+        templates.forEach(template => {
+          const option = document.createElement('option');
+          option.value = template.id; // id (数値)
+          option.textContent = template.name;
+          selectEl.appendChild(option);
+        });
+      })
+      .catch(error => {
+        console.error('Error loading templates:', error);
+        // alert('テンプレートの読み込みに失敗しました。');
+      });
+  }
+  
+  // テンプレートをプレビューに適用 (ハイライト)
+  function applyTemplate(templateId) {
+    const template = templatesCache.find(t => t.id == templateId);
+    if (!template || !template.range) {
+      alert("テンプレート情報の読み込みに失敗しました。");
+      return;
+    }
+
+    // (1) 既存の青ハイライト（.template-highlight）と選択範囲（JS変数）をリセット
+    resetTemplateHighlights();
+
+    // (2) テンプレートの範囲 (range.a, range.b) を JS変数 (selectionCoords) にコピー
+    // (※ range.a や range.b が null/undefined の場合も考慮)
+    selectionCoordsA.cells = template.range.a || [];
+    selectionCoordsB.cells = template.range.b || [];
+
+    // (3) テンプレートの範囲を青くハイライト
+    applyTemplateHighlights(selectionCoordsA.cells, 'A');
+    applyTemplateHighlights(selectionCoordsB.cells, 'B');
+    
+    // (4) 選択ステータスを更新
+    updateSelectionStatus();
+  }
+  
+  // テンプレート（青）ハイライトとJS変数のみをリセットする
+  function resetTemplateHighlights() {
+    selectionCoordsA.cells = [];
+    selectionCoordsB.cells = [];
+    document.querySelectorAll('.comparable-cell').forEach(cell => {
+      cell.classList.remove('template-highlight');
+    });
+    updateSelectionStatus();
+  }
+  
+  // テンプレートのハイライト（青）を適用
+  function applyTemplateHighlights(cells, docId) {
+    if (!cells) return;
+    cells.forEach(coord => {
+      // 座標は {row: X, col: Y} の形式で保存されている
+      const cell = document.querySelector(`.comparable-cell[data-doc="${docId}"][data-row="${coord.row}"][data-col="${coord.col}"]`);
+      if (cell) {
+        cell.classList.add('template-highlight');
+      }
+    });
+  }
+
+  // 保存ボタン（モーダルを開く）
+  function openSaveTemplateModal() {
+    if (selectionCoordsA.cells.length === 0 || selectionCoordsB.cells.length === 0) {
+      alert("資料Aと資料Bの範囲を指定（またはテンプレートを適用）してから保存してください。");
+      return;
+    }
+    const templateNameInput = document.getElementById('template-name');
+    if (templateNameInput) templateNameInput.value = ''; // 入力欄をクリア
+    openModal('template-name-modal');
+  }
+
+  // POST /templates
+  function saveTemplate(templateName, range) {
+    // Rails の CSRF トークンを取得
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (!csrfToken) {
+        console.error('CSRF token not found');
+        alert('セキュリティトークンが見つかりません。ページをリロードしてください。');
+        return;
+    }
+
+    // fetch でサーバー (TemplatesController#create) にリクエスト
+    fetch('/templates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken, // CSRF トークンをヘッダーに含める
+        'Accept': 'application/json'
+      },
+      // JavaScript オブジェクトを JSON 文字列に変換して送信
+      body: JSON.stringify({
+        template: {
+          name: templateName,
+          range: range // { a: [{row:X, col:Y}, ...], b: [...] }
+        }
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        // バリデーションエラー (422) などもここで処理
+        return response.json().then(err => Promise.reject(err));
+      }
+      return response.json(); // RailsからのレスポンスをJSONとしてパース
+    })
+    .then(newTemplate => {
+      // (B) 保存成功
+      alert(`テンプレート「${newTemplate.name}」を保存しました。`);
+      closeModal('template-name-modal');
+      
+      // (C) プルダウンを再読み込み (新しいテンプレートを含めるため)
+      loadTemplates(); 
+      
+      // (D) (オプション) 保存したテンプレートを即座に選択状態にする
+      // (※ loadTemplates が非同期なので、少し工夫が必要)
+      // (※ 今回は再読み込みのみ)
+    })
+    .catch(error => {
+      console.error('Error saving template:', error);
+      if (error.errors) {
+        // (A) 保存失敗 (バリデーションエラーなど)
+        alert('テンプレートの保存に失敗しました:\n' + error.errors.join('\n'));
+      } else {
+        alert('テンプレートの保存中にエラーが発生しました。');
+      }
+    });
+  }
+
 </script>
+
+
