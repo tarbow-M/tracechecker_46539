@@ -7,4 +7,6 @@ Rails.application.routes.draw do
   resources :parent_projects do
     resources :projects, except: [:index]
   end
+
+  resources :templates, only: [:index, :create, :destroy]
 end
