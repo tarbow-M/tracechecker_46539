@@ -1,3 +1,9 @@
-// Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
+// Entry point for the esbuild build script in package.json
 import "@hotwired/turbo-rails"
-import "controllers"
+import * as ActiveStorage from "@rails/activestorage"
+
+// ActiveStorage を開始
+ActiveStorage.start()
+
+// (Stimulus コントローラは /controllers フォルダが作成されたらここに追加します)
+// import "./controllers"
