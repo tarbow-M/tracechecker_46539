@@ -2,8 +2,7 @@
   "name": "app",
   "private": "true",
   "scripts": {
-    "build": "...",
-    
+    "build": "esbuild app/javascript/*.* --bundle --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets",
     "build:css": "tailwindcss -i ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css --minify",
     "watch:css": "tailwindcss -i ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css --watch"
   },
@@ -12,5 +11,15 @@
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6"
+  },
+
+  //  "これがないとRenderのビルドが失敗します",
+  "dependencies": {
+    "esbuild": "^0.23.0"
+  },
+
+  //  "RenderにNode.jsのバージョンを指示します",
+  "engines": {
+    "node": "20.10.0"
   }
 }
