@@ -1,0 +1,53 @@
+<!-- トップページ (root) -->
+<div class="max-w-7xl mx-auto p-4 sm:p-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">
+      ダッシュボード (親プロジェクト一覧)
+    </h1>
+    
+    <%= link_to '新規プロジェクト作成', 
+        new_parent_project_path, 
+        class: "inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" 
+    %>
+  </div>
+
+  <!-- プロジェクト一覧 -->
+  <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+    <div class="p-6">
+      <% if @parent_projects.any? %>
+        <ul class="divide-y divide-gray-200">
+          <% @parent_projects.each do |project| %>
+            <li class="py-4 flex justify-between items-center">
+              <div>
+
+                <%= link_to project.name, parent_project_path(project), class: "text-lg font-semibold text-blue-600 hover:text-blue-800" %>
+                
+                <p class="text-sm text-gray-500">
+                  作成日: <%= l project.created_at, format: :short %>
+                </p>
+              </div>
+              <div class="text-right">
+                <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-0.5 text-sm font-medium text-gray-800">
+                  子プロジェクト: <%= project.projects.count %>件
+                </span>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <!-- プロジェクトが1件もない場合の表示 -->
+        <div class="text-center py-12">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+          </svg>
+          <h3 class="mt-2 text-sm font-semibold text-gray-900">プロジェクトがありません</h3>
+          <p class="mt-1 text-sm text-gray-500">
+            まずは「新規プロジェクト作成」ボタンから始めましょう。
+          </p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+

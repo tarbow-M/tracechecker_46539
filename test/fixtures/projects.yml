@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  parent_project: one
+  name: MyString
+  status: MyString
+  last_run: 2025-10-31 12:14:55
+  diff_count: 1
+  is_locked: false
+
+two:
+  parent_project: two
+  name: MyString
+  status: MyString
+  last_run: 2025-10-31 12:14:55
+  diff_count: 1
+  is_locked: false

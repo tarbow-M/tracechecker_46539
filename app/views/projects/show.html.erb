@@ -1,0 +1,285 @@
+<!-- データ表示・範囲選択ページ -->
+<div class="max-w-7xl mx-auto">
+  
+  <!-- 1. ヘッダー (パンくずリストとタイトル) -->
+  <div class="mb-4">
+    <%= link_to "ダッシュボード", root_path, class: "text-blue-600 hover:underline" %>
+    <span class="text-gray-500 mx-2">/</span>
+    <%= link_to @parent_project.name, parent_project_path(@parent_project), class: "text-blue-600 hover:underline" %>
+    <span class="text-gray-500 mx-2">/</span>
+    <span class="font-semibold text-gray-800"><%= @project.name %></span>
+  </div>
+
+  <h1 class="text-3xl font-bold text-gray-900 mb-6">
+    照合実行: <%= @project.name %>
+  </h1>
+
+  <!-- 2. ファイル選択エリア -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <!-- 資料Aの選択 -->
+    <div class="bg-white p-4 rounded-lg shadow">
+      <label for="file_a" class="block text-sm font-medium text-gray-700 mb-2">資料A (比較元)</label>
+      <select id="file_a" name="file_a" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+        <option value="">アップロード済みファイルから選択...</option>
+        <% @files.each do |file| %>
+          <option value="<%= rails_blob_path(file) %>" data-filename="<%= file.filename.to_s %>">
+            <%= file.filename.to_s %> (<%= number_to_human_size(file.blob.byte_size) %>)
+          </option>
+        <% end %>
+      </select>
+    </div>
+    <!-- 資料Bの選択 -->
+    <div class="bg-white p-4 rounded-lg shadow">
+      <label for="file_b" class="block text-sm font-medium text-gray-700 mb-2">資料B (比較先)</label>
+      <select id="file_b" name="file_b" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+        <option value="">アップロード済みファイルから選択...</option>
+        <% @files.each do |file| %>
+          <option value="<%= rails_blob_path(file) %>" data-filename="<%= file.filename.to_s %>">
+            <%= file.filename.to_s %> (<%= number_to_human_size(file.blob.byte_size) %>)
+          </option>
+        <% end %>
+      </select>
+    </div>
+  </div>
+
+  <!-- 3. 照合コントロールエリア -->
+  <div class="bg-white p-4 rounded-lg shadow mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <!-- テンプレート選択 -->
+    <div class="w-full sm:w-auto">
+      <label for="template_select" class="block text-sm font-medium text-gray-700 mb-1">照合パターン (テンプレート)</label>
+      <select id="template_select" class="w-full sm:w-64 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        <option value="none">テンプレートを使用しない</option>
+        <!-- TODO: テンプレート機能を実装 -->
+        <!-- 
+        <%# @templates.each do |template| %>
+          <option value="<%#= template.id %>"><%#= template.name %></option>
+        <%# end %>
+        -->
+        <option value="dummy_1">ダミーテンプレート1 (KPI)</option>
+      </select>
+    </div>
+    
+    <!-- アーカイブ参照 (デモ版の機能) -->
+    <div class="w-full sm:w-auto">
+      <label for="archive_select" class="block text-sm font-medium text-gray-700 mb-1">過去の照合結果を参照</label>
+      <select id="archive_select" class="w-full sm:w-64 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        <option value="none">参照しない</option>
+        <!-- TODO: アーカイブ機能を実装 -->
+        <option value="dummy_archive_1">ダミー過去結果1</option>
+      </select>
+    </div>
+
+    <!-- 照合実行ボタン -->
+    <div class="w-full sm:w-auto pt-5">
+      <button id="start-comparison" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">
+        <svg class="w-5 h-5 inline-block mr-2 -mt-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v2.5h-2.5a.75.75 0 000 1.5h2.5v2.5a.75.75 0 001.5 0v-2.5h2.5a.75.75 0 000-1.5h-2.5v-2.5z" clip-rule="evenodd" />
+        </svg>
+        照合実行
+      </button>
+    </div>
+  </div>
+  
+  <!-- 4. 比較プレビューエリア -->
+  <div id="comparison-area" class="comparison-area grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- 資料A プレビュー (ダミーデータ) -->
+    <div id="preview-A" class="doc-view bg-white p-4 rounded-lg shadow-inner border border-gray-200 min-h-[400px]">
+      <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3">資料A: (ファイル未選択)</h3>
+      <table class="w-full text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+          <tr>
+            <th scope="col" class="px-4 py-2">項目</th>
+            <th scope="col" class="px-4 py-2">目標</th>
+            <th scope="col" class="px-4 py-2">結果</th>
+          </tr>
+        </thead>
+        <tbody id="table-A">
+          <!-- TODO: ファイルが選択されたらここに内容を表示 -->
+          <% @dummy_data_a.each_with_index do |row, index| %>
+            <tr class="bg-white border-b comparable-cell" data-row-id-a="<%= index %>" data-key="<%= row[:key] %>">
+              <td class="px-4 py-2 font-medium text-gray-900"><%= row[:key] %></td>
+              <td class="px-4 py-2"><%= row[:goal] %></td>
+              <td class="px-4 py-2"><%= row[:result] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 資料B プレビュー (ダミーデータ) -->
+    <div id="preview-B" class="doc-view bg-white p-4 rounded-lg shadow-inner border border-gray-200 min-h-[400px]">
+      <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3">資料B: (ファイル未選択)</h3>
+      <table class="w-full text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+          <tr>
+            <th scope="col" class="px-4 py-2">項目</th>
+            <th scope="col" class="px-4 py-2">目標</th>
+            <th scope="col" class="px-4 py-2">結果</th>
+          </tr>
+        </thead>
+        <tbody id="table-B">
+          <!-- TODO: ファイルが選択されたらここに内容を表示 -->
+           <% @dummy_data_b.each_with_index do |row, index| %>
+            <tr class="bg-white border-b comparable-cell" data-row-id-b="<%= index %>" data-key="<%= row[:key] %>">
+              <td class="px-4 py-2 font-medium text-gray-900"><%= row[:key] %></td>
+              <td class="px-4 py-2"><%= row[:goal] %></td>
+              <td class="px-4 py-2"><%= row[:result] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 5. 照合結果サマリー (初期状態では非表示) -->
+  <div id="result-summary" class="hidden mt-6 bg-white p-6 rounded-lg shadow-lg border-t-4 border-blue-500">
+    <h2 class="text-2xl font-bold text-gray-900 mb-4">照合結果サマリー</h2>
+    <div id="summary-content" class="text-lg">
+      <!-- (照合実行後にJavaScriptで内容が挿入される) -->
+    </div>
+    <div class="mt-6 flex gap-4">
+      <button id="save-archive-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+        証跡として保存 (アーカイブ)
+      </button>
+      <button id="save-template-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+        選択範囲をテンプレートに保存
+      </button>
+      <button id="export-button" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+        結果エクスポート (CSV)
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- 照合ロジックとUI制御のためのJavaScript (デモ版のロジックを移植) -->
+<!-- 
+  TODO: 本来は app/javascript/controllers/comparison_controller.js などに
+  Stimulus (Hotwire) を使って実装すべきですが、ここではデモ版のロジックを
+  簡略化して <script> タグ内に配置します。
+-->
+<style>
+  /* デモ版のハイライト用CSS */
+  .diff-highlight { background-color: #fecaca !important; } /* 赤 (差異) */
+  .match-highlight { background-color: #d1fae5 !important; } /* 緑 (一致) */
+  .unmatched-highlight { background-color: #fff3cd !important; } /* 黄 (片方のみ) */
+  .template-highlight { background-color: rgba(191, 219, 254, 0.5) !important; } 
+  .comparison-cell-border { border: 2px dashed #ef4444 !important; }
+</style>
+
+<script>
+  document.addEventListener('turbo:load', () => {
+    
+    const comparisonArea = document.getElementById('comparison-area');
+    const startButton = document.getElementById('start-comparison');
+    const resultSummary = document.getElementById('result-summary');
+    const summaryContent = document.getElementById('summary-content');
+    const selectA = document.getElementById('file_a');
+    const selectB = document.getElementById('file_b');
+    const previewA = document.getElementById('preview-A');
+    const previewB = document.getElementById('preview-B');
+
+    // ファイル選択ドロップダウンの制御
+    function updatePreviewHeader(selectEl, previewEl) {
+      const selectedOption = selectEl.options[selectEl.selectedIndex];
+      const filename = selectedOption.dataset.filename;
+      const h3 = previewEl.querySelector('h3');
+      if (filename) {
+        h3.textContent = `${previewEl.id.includes('A') ? '資料A' : '資料B'}: ${filename}`;
+        // TODO: ここでファイル内容 (Excel/CSV) をAJAXで読み込み、
+        // @dummy_data_a / @dummy_data_b の代わりにテーブルを描画する
+      } else {
+        h3.textContent = `${previewEl.id.includes('A') ? '資料A' : '資料B'}: (ファイル未選択)`;
+      }
+    }
+
+    if (selectA) selectA.addEventListener('change', () => updatePreviewHeader(selectA, previewA));
+    if (selectB) selectB.addEventListener('change', () => updatePreviewHeader(selectB, previewB));
+
+
+    // --- デモ版の照合ロジック (簡略版) ---
+    if (startButton) {
+      startButton.addEventListener('click', () => {
+        
+        // TODO: 実際には選択されたテンプレート (template_select) に基づき
+        // 比較範囲を決定する
+        
+        // 1. 全てのセルを照合範囲としてマーク (赤枠)
+        const cellsA = document.querySelectorAll('#table-A .comparable-cell');
+        const cellsB = document.querySelectorAll('#table-B .comparable-cell');
+        cellsA.forEach(cell => cell.classList.add('comparison-cell-border'));
+        cellsB.forEach(cell => cell.classList.add('comparison-cell-border'));
+
+        // 2. ハイライトをリセット
+        document.querySelectorAll('.comparable-cell').forEach(cell => {
+          cell.classList.remove('diff-highlight', 'match-highlight', 'unmatched-highlight');
+        });
+
+        // 3. 照合ロジック (Keyベース)
+        const keysA = new Map();
+        cellsA.forEach(cell => {
+          const key = cell.dataset.key;
+          // (簡略化のため、tdの内容全体ではなくkeyのみを比較)
+          keysA.set(key, { cell: cell, content: cell.innerText }); 
+        });
+
+        const keysB = new Map();
+        cellsB.forEach(cell => {
+          const key = cell.dataset.key;
+          keysB.set(key, { cell: cell, content: cell.innerText });
+        });
+
+        let diffCount = 0;
+        let matchCount = 0;
+        let unmatchedA = 0;
+        let unmatchedB = 0;
+
+        // Aを基準にBをチェック
+        keysA.forEach((valueA, keyA) => {
+          if (keysB.has(keyA)) {
+            // Keyが両方にある
+            const valueB = keysB.get(keyA);
+            if (valueA.content === valueB.content) {
+              // 一致
+              valueA.cell.classList.add('match-highlight');
+              valueB.cell.classList.add('match-highlight');
+              matchCount++;
+            } else {
+              // 差異あり
+              valueA.cell.classList.add('diff-highlight');
+              valueB.cell.classList.add('diff-highlight');
+              diffCount++;
+            }
+          } else {
+            // Aにのみ存在
+            valueA.cell.classList.add('unmatched-highlight');
+            unmatchedA++;
+          }
+        });
+
+        // Bを基準にAにないものをチェック
+        keysB.forEach((valueB, keyB) => {
+          if (!keysA.has(keyB)) {
+            // Bにのみ存在
+            valueB.cell.classList.add('unmatched-highlight');
+            unmatchedB++;
+          }
+        });
+
+        // 4. 結果サマリーを表示
+        summaryContent.innerHTML = `
+          <p class="text-red-600 font-semibold">差異あり: ${diffCount} 件</p>
+          <p class="text-green-600">一致: ${matchCount} 件</p>
+          <p class="text-yellow-700">資料Aのみに存在: ${unmatchedA} 件</p>
+          <p class="text-yellow-700">資料Bのみに存在: ${unmatchedB} 件</p>
+          <p class="mt-2 font-bold">合計: ${diffCount + matchCount + unmatchedA + unmatchedB} 項目を照合しました。</p>
+        `;
+        resultSummary.classList.remove('hidden');
+        
+        // TODO: 照合結果をサーバに送信 (Turbo Stream など)
+      });
+    }
+    
+    // TODO: アーカイブ保存、テンプレート保存、エクスポート機能の実装
+  });
+</script>
