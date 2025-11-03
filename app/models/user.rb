@@ -6,8 +6,8 @@ class User < ApplicationRecord
   
   ## Association ----------------------------------------------
   has_many :parent_projects, dependent: :destroy
-  has_many :templates, dependent: :destroy
-  # has_many :logs
+  has_many :templates      , dependent: :destroy
+  has_many :logs           , dependent: :destroy
 
   ## Validation ------------------------------------------------
   # personal_num は必須かつ一意

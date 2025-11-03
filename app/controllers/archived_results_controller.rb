@@ -2,51 +2,64 @@ class ArchivedResultsController < ApplicationController
   # ネストされたコントローラなので、親のプロジェクトを読み込む
   before_action :set_project
 
+  # POST /parent_projects/:parent_project_id/projects/:project_id/archived_results
   def create
     # 親 (ArchivedResult) と 子 (TraceResult) の両方を
-    # 1つのトランザクション（2つの処理を一つにまとめること）で安全に保存する → どちらとも成功した場合のみDb保存
+    # 1つのトランザクション（処理のかたまり）で安全に保存する
     
     # 1. まず、親 (ArchivedResult) のインスタンスを作成
-    # (まだDBには保存しない)
     @archived_result = @project.archived_results.new(archive_params)
     
     # 2. データベースのトランザクションを開始
     ActiveRecord::Base.transaction do
-      # 3. まず親 (ArchivedResult) をDBに保存 (これにより @archived_result.id が確定する)
-      @archived_result.save! # (失敗した場合はここで例外が発生し、トランザクションがロールバックされる)
+      # 3. まず親 (ArchivedResult) をDBに保存
+      @archived_result.save! # (失敗した場合はここで例外が発生し、ロールバック)
 
-      # 4. JavaScriptから送られてきた "results" (TraceResultの配列) を処理  （ストパラ）
-      results_params = params.require(:results) # results 配列を必須にする
+      # 4. JavaScriptから送られてきた "results" (TraceResultの配列) を処理
+      results_params = params.require(:results)
       
-      # "results" 配列が空でないことを確認
       if results_params.blank?
-        # 空の場合はトランザクションを失敗させる (ロールバック)
         raise ActiveRecord::Rollback, "照合結果（results）が空です"
       end
 
-      # 5. results 配列をループ処理し、"create!" を使って1件ずつDBに保存する
-      # (create! なら ActiveRecord の型変換 (Hash -> JSON文字列) が正しく動作する)
-      results_params.each do |result_param|
-        @archived_result.trace_results.create!(
-          key: result_param["key"],
+      # 5. 子 (TraceResult) の配列データを作成
+      trace_results_data = results_params.map do |result_param|
+        {
+          archived_result_id: @archived_result.id,
+          key: result_param["key"],     # (シンボル :key ではなく 文字列 "key" を使用)
           flag: result_param["flag"],
           comment: result_param["comment"],
-          # "target_cell" はRubyハッシュのまま渡せば、create! が自動でJSON文字列に変換
+          # "target_cell" (Rubyハッシュ) を "json" カラムに保存
+          # (MySQL/PostgreSQL両対応のため .to_json は不要、create! が自動変換)
           target_cell: result_param["target_cell"], 
-        )
+          created_at: Time.current,
+          updated_at: Time.current
+        }
       end
+      
+      # 6. 子 (TraceResult) の配列データを "create!" でDBに登録
+      # (insert_all! は型変換をバイパスするため、create! を使う)
+      trace_results_data.each do |data|
+        TraceResult.create!(data)
+      end
+      
+      # create_log メソッドを呼び出して、操作ログをデータベースに保存（application_controller.rb で定義）
+      create_log(
+        "archive_create", # action_type（操作の種類）
+        "証跡 '#{@archived_result.name}' (ID: #{@archived_result.id}) を作成しました。", # 操作の詳細
+        @project # 関連する子プロジェクト
+      )
     end
     
-    # 6. トランザクションがすべて成功した場合
+    # 8. トランザクションがすべて成功した場合
     render json: { 
       message: '証跡を保存しました', 
       archived_result_id: @archived_result.id,
-      # 遷移先のパスもJSONで返す
-      redirect_url: parent_project_path(@parent_project) 
+      redirect_url: parent_project_path(@parent_project) # 遷移先のパスもJSONで返す
     }, status: :created
 
   rescue ActiveRecord::RecordInvalid => e
-    # バリデーションエラー (例: アーカイブ名が空、または "create!" が失敗)
+    # バリデーションエラー (例: アーカイブ名が空)
     render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
     
   rescue => e
@@ -72,7 +85,4 @@ class ArchivedResultsController < ApplicationController
       # child_project_id は @project.archived_results.new で自動セット
     )
   end
-
-  # 忘備録 
-  # "results" (TraceResultの配列) のパラメータはcreate アクション内で "require" して直接処理するため、ストロングパラメータのメソッドは不要
 end

@@ -6,11 +6,13 @@ Rails.application.routes.draw do
 
   resources :parent_projects do
     resources :projects, except: [:index] do
-      resources :archived_results, only: [:create, :index, :show] # (index, show は将来の証跡閲覧用)
+      resources :archived_results, only: [:create]
     end
   end
 
   resources :templates, only: [:index, :create, :destroy]
+  resources :logs, only: [:index]
 
-
+  # (rails7.1標準搭載の本番環境の定期チェック)
+  get "up" => "rails/health#show", as: :rails_health_check
 end
