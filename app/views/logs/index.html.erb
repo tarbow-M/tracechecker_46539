@@ -1,0 +1,93 @@
+<!-- /app/views/logs/index.html.erb -->
+<div class="max-w-7xl mx-auto p-4 sm:p-8">
+  
+  <!-- 1. ヘッダー (パンくずリストとタイトル) -->
+  <div class="mb-4">
+    <%= link_to "ダッシュボード", root_path, class: "text-blue-600 hover:underline" %>
+    <span class="text-gray-500 mx-2">/</span>
+    <span class="font-semibold text-gray-800">操作ログ</span>
+  </div>
+
+  <h1 class="text-3xl font-bold text-gray-900 mb-6">
+    操作ログ一覧
+  </h1>
+
+  <!-- 2. ログ一覧テーブル -->
+  <div class="bg-white p-4 sm:p-6 rounded-lg shadow overflow-x-auto">
+    <% if @logs.empty? %>
+      <p class="text-gray-500">操作ログはまだありません。</p>
+    <% else %>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              日時
+            </th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              アクション
+            </th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              概要
+            </th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              関連プロジェクト
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @logs.each do |log| %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                <!-- (strftimeでフォーマット) -->
+                <%= log.created_at.strftime("%Y-%m-%d %H:%M:%S") %>
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                <% if log.action_type == "archive_create" %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    証跡作成
+                  </span>
+                <% elsif log.action_type == "template_create" %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                    テンプレート作成
+                  </span>
+                <% elsif log.action_type == "parent_project_create" %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                    プロジェクト作成
+                  </span>
+                <% else %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                    <%= log.action_type %>
+                  </span>
+                <% end %>
+              </td>
+              <td class="px-4 py-4 whitespace-normal text-sm text-gray-700 break-words">
+                <%= log.description %>
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                <% if log.project.present? %>
+                  <!-- 
+                    log.project は子プロジェクト (@project)
+                    log.project.parent_project は親プロジェクト (@parent_project)
+                    リンク先は子プロジェクトの照合実行画面
+                  -->
+                  <%= link_to parent_project_project_path(log.project.parent_project, log.project), class: "text-blue-600 hover:underline" do %>
+                    <%= log.project.parent_project.name %> / <%= log.project.name %>
+                  <% end %>
+                <% else %>
+                  <span class="text-gray-400">N/A</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      
+      <!-- TODO: ページネーションのリンク -->
+      <%#= paginate @logs %>
+      
+    <% end %>
+  </div>
+
+</div>
+
+

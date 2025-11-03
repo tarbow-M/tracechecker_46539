@@ -11,7 +11,14 @@ class TemplatesController < ApplicationController
    @template = current_user.templates.new(template_params)
 
     if @template.save
-      # 保存成功
+      # 保存成功 -----------
+      # ログを作成 
+      create_log(
+        "template_create",
+        "テンプレート '#{@template.name}' (ID: #{@template.id}) を作成しました。",
+        nil # (テンプレートは特定のプロジェクトには紐づかない)
+      )
+
       render json: @template.as_json(only: [:id, :name, :range]), status: :created # as_json で range も含めて返す
     else
       # 保存失敗（エラー文表示）
