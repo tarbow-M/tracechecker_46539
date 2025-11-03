@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_11_01_023433) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_02_140052) do
   create_table "active_storage_attachments", charset: "utf8mb3", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -37,6 +37,17 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_01_023433) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "archived_results", charset: "utf8mb3", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "diff_count"
+    t.bigint "child_project_id", null: false
+    t.string "file_a_id"
+    t.string "file_b_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["child_project_id"], name: "index_archived_results_on_child_project_id"
   end
 
   create_table "parent_projects", charset: "utf8mb3", force: :cascade do |t|
@@ -68,6 +79,17 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_01_023433) do
     t.index ["user_id"], name: "index_templates_on_user_id"
   end
 
+  create_table "trace_results", charset: "utf8mb3", force: :cascade do |t|
+    t.bigint "archived_result_id", null: false
+    t.string "key", null: false
+    t.string "flag", null: false
+    t.text "comment"
+    t.json "target_cell"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["archived_result_id"], name: "index_trace_results_on_archived_result_id"
+  end
+
   create_table "users", charset: "utf8mb3", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -85,7 +107,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_01_023433) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "archived_results", "projects", column: "child_project_id"
   add_foreign_key "parent_projects", "users"
   add_foreign_key "projects", "parent_projects"
   add_foreign_key "templates", "users"
+  add_foreign_key "trace_results", "archived_results"
 end
