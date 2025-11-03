@@ -1,5 +1,5 @@
 // Entry point for the esbuild build script in package.json
-import "@hotwired/turbo-rails"
+// import "@hotwired/turbo-rails"
 import * as ActiveStorage from "@rails/activestorage"
 
 // ActiveStorage を開始
