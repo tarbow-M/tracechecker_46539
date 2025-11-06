@@ -43,6 +43,9 @@ class ArchivedResultsController < ApplicationController
         TraceResult.create!(data)
       end
       
+      # プロジェクトをロック 
+      @project.update!(is_locked: true, status: '確定済み')
+
       # create_log メソッドを呼び出して、操作ログをデータベースに保存（application_controller.rb で定義）
       create_log(
         "archive_create", # action_type（操作の種類）
@@ -53,8 +56,10 @@ class ArchivedResultsController < ApplicationController
     
     # 8. トランザクションがすべて成功した場合
     render json: { 
-      message: '証跡を保存しました', 
+      success: true, # 成功フラグ
+      message: '結果を保存しました', 
       archived_result_id: @archived_result.id,
+      is_locked: @project.is_locked, # ロック状態を返す
       redirect_url: parent_project_path(@parent_project) # 遷移先のパスもJSONで返す
     }, status: :created
 
