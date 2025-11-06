@@ -13,6 +13,11 @@ Rails.application.routes.draw do
     end
 
     resources :projects, except: [:index] do
+      # unlockアクション追加
+      member do
+        patch :unlock
+      end
+
       resources :archived_results, only: [:create]
     end
   end

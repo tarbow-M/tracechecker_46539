@@ -108,11 +108,35 @@ class ProjectsController < ApplicationController
         @project
       )
       
-      flash[:notice] = "プロジェクトのロックを解除しました。再確認モードで照合を実行できます。"
+      # JavaScript fetch からの呼び出しに対応するため、respond_to ブロック使用
+      respond_to do |format|
+        format.html do
+          # 通常のフォーム送信（button_to）の場合
+          flash[:notice] = "プロジェクトのロックを解除しました。再確認モードで照合を実行できます。"
+          redirect_to parent_project_project_path(@parent_project, @project)
+        end
+        format.json do
+          # JavaScript fetch からの場合
+          render json: { 
+            success: true, 
+            message: 'ロックを解除しました' 
+          }
+        end
+      end
     else
-      flash[:alert] = "ロック解除に失敗しました。"
+      respond_to do |format|
+        format.html do
+          flash[:alert] = "ロック解除に失敗しました。"
+          redirect_to parent_project_project_path(@parent_project, @project)
+        end
+        format.json do
+          render json: { 
+            success: false, 
+            errors: @project.errors.full_messages 
+          }, status: :unprocessable_entity
+        end
+      end
     end
-    redirect_to parent_project_project_path(@parent_project, @project) # (showページにリダイレクト)
   end
 
 

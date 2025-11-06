@@ -1391,14 +1391,12 @@
         console.log('Archive saved:', data);
         closeModal('archive-name-modal');
         document.getElementById('archive-name-form').reset();
-        alert('証跡を保存しました！');
-        
-        // (コントローラから返されたURLに遷移)
-        if (data.redirect_url) {
-          window.location.href = data.redirect_url;
+        // is_locked = true の場合にenableLockModeを呼び出してページをロックモードにする
+        if (data.is_locked) {
+          enableLockMode();
+          alert('証跡を保存し、ロックしました！編集は「再確認モードへ移行」ボタンから解除できます。');
         } else {
-          // (フォールバック)
-          window.location.href = '<%= parent_project_path(@parent_project) %>';
+          alert('証跡を保存しました！');
         }
       }
     })
@@ -1477,6 +1475,118 @@
 
     link.click(); // This will download the data file
     document.body.removeChild(link);
+  }
+
+  // ==========================================
+  // 8. ロックモード制御 (新規追加)
+  // ==========================================
+
+  function enableLockMode() {
+      console.log("ロックモードを有効化");
+      
+      // 1. ロック警告を表示
+      const lockWarningHTML = `
+          <div id="lock-warning-dynamic" class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-lg shadow">
+            <h3 class="font-bold text-lg">
+              <svg class="w-6 h-6 inline-block mr-2 -mt-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
+              </svg>
+              証跡ロック済み
+            </h3>
+            <p class="mt-1">この照合単位は「確定済み」としてアーカイブ保存されているため、編集できません。</p>
+            <button id="unlock-button-dynamic" class="mt-2 inline-block bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-lg text-sm">
+              再確認モードへ移行
+            </button>
+          </div>
+      `;
+      
+      // ヘッダーの下に挿入（既存のロック警告がない場合のみ）
+      const existingLockWarning = document.getElementById('lock-warning-dynamic');
+      if (!existingLockWarning) {
+          const header = document.querySelector('h1');
+          header.insertAdjacentHTML('afterend', lockWarningHTML);
+          
+          // ロック解除ボタンのイベントリスナー
+          document.getElementById('unlock-button-dynamic').addEventListener('click', () => {
+              if (confirm('本当にロックを解除しますか？再度編集が可能になります。')) {
+                  unlockProject();
+              }
+          });
+      }
+      
+      // 2. ファイル選択エリアを無効化
+      const fieldsets = document.querySelectorAll('fieldset');
+      fieldsets.forEach(fieldset => {
+          fieldset.setAttribute('disabled', true);
+          fieldset.querySelector('.bg-white')?.classList.add('opacity-60');
+      });
+      
+      // 3. 照合実行ボタンを非表示
+      const comparisonSection = document.querySelector('#start-comparison-button')?.closest('.bg-white');
+      if (comparisonSection) {
+          comparisonSection.classList.add('hidden');
+      }
+      
+      // 4. 選択モードを無効化
+      isSelectionMode = false;
+      isKeySelectionMode = false;
+      const comparisonArea = document.getElementById('comparison-area');
+      comparisonArea.classList.add('selection-mode-disabled');
+      comparisonArea.classList.remove('selection-mode-active');
+      
+      // モードボタンをリセット
+      const toggleSelectionButton = document.getElementById('toggle-selection-mode-button');
+      const toggleKeyButton = document.getElementById('toggle-key-selection-mode-button');
+      if (toggleSelectionButton) {
+          toggleSelectionButton.textContent = 'データ範囲モード開始';
+          toggleSelectionButton.classList.remove('bg-red-500', 'hover:bg-red-600');
+          toggleSelectionButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+          toggleSelectionButton.disabled = true;
+      }
+      if (toggleKeyButton) {
+          toggleKeyButton.textContent = 'キー選択モード開始';
+          toggleKeyButton.classList.remove('bg-red-500', 'hover:bg-red-600');
+          toggleKeyButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
+          toggleKeyButton.disabled = true;
+      }
+      
+      // 5. テンプレート保存ボタンを無効化
+      const saveTemplateButton = document.getElementById('save-template-button');
+      if (saveTemplateButton) {
+          saveTemplateButton.disabled = true;
+      }
+      
+      // 6. アーカイブ保存ボタンを削除し、ロック解除ボタンに置き換え
+      const saveArchiveButton = document.getElementById('save-archive-button');
+      if (saveArchiveButton) {
+          saveArchiveButton.remove();
+      }
+  }
+
+  function unlockProject() {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      const unlockUrl = '<%= unlock_parent_project_project_path(@parent_project, @project) %>';
+      
+      fetch(unlockUrl, {
+          method: 'PATCH',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': csrfToken
+          }
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              alert('ロックを解除しました。ページを再読み込みします。');
+              window.location.reload();
+          } else {
+              alert('ロック解除に失敗しました: ' + (data.errors || ['不明なエラー']).join(', '));
+          }
+      })
+      .catch(error => {
+          console.error('Error unlocking project:', error);
+          alert('ロック解除中にエラーが発生しました。');
+      });
   }
 
 </script>
