@@ -5,7 +5,7 @@ class ParentProjectsController < ApplicationController
   # ApplicationControllerで一括して :authenticate_user! が呼ばれる
   
   # (index 以外のアクションの前に @parent_project を読み込む)
-  before_action :set_parent_project, only: [:show, :edit, :update, :destroy, :file_preview] # file_preview を追加
+  before_action :set_parent_project, only: [:show, :edit, :update, :destroy, :file_preview, :file_remove] # file_preview を追加
 
   # GET / (root)
   # (ダッシュボード)
@@ -167,6 +167,31 @@ class ParentProjectsController < ApplicationController
       }, status: :unprocessable_entity # (422 エラー)
     end
   end
+  
+  # ファイル削除機能
+  def file_remove
+    # @parent_project は set_parent_project で読み込み済み
+
+    begin # begin：エラーになるかもしれない処理を記述する際に使用
+      # 1. :file_id から、この親プロジェクトに紐づく添付ファイルを探す
+      attachment = @parent_project.files_attachments.find(params[:file_id])
+      filename = attachment.filename.to_s # ファイル名を取得
+
+      # 2. 添付ファイルを削除
+      attachment.purge # .purge：削除
+      flash[:notice] = "ファイル '#{filename}' を削除しました"
+    
+    ## エラー処理（rescue：beginとセットでダメだった時の処理を記述）
+    rescue ActiveRecord::RecordNotFound
+      flash[:alert] = "指定されたファイルが見つかりません"
+    rescue => e  # e：エラー情報が入っている変数
+      flash[:alert] = "ファイルの削除に失敗しました: #{e.message}"
+    end
+
+    # 3. 削除後、親の詳細ページにリダイレクト
+    redirect_to parent_project_path(@parent_project)
+  end
+
 
 
   private

@@ -51,8 +51,11 @@
           </div>
         <% end %>
 
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3 3m3-3l3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.33-2.33 3 3 0 013.75 5.25m-1.33 2.19l-4.13-4.13a.75.75 0 010-1.06l4.13-4.13a.75.75 0 011.06 0l.94.94a.75.75 0 010 1.06l-4.13 4.13-4.13 4.13a.75.75 0 01-1.06 0l-.94-.94a.75.75 0 010-1.06l4.13-4.13z" />
+        <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-plus-icon lucide-file-plus">
+          <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
+          <path d="M14 2v5a1 1 0 0 0 1 1h5"/>
+          <path d="M9 15h6"/>
+          <path d="M12 18v-6"/>        
         </svg>
 
         <!-- 
@@ -81,7 +84,6 @@
           （ファイルを選択すると即時アップロードされます）
         </p>
       <% end %>
-      <!-- ▲▲▲ フォーム修正ここまで ▲▲▲ -->
 
       <!-- アップロード済みファイル一覧 -->
       <div class="mt-6">
@@ -91,9 +93,23 @@
         <% if @parent_project.files.attached? %>
           <ul class="divide-y divide-gray-200 border border-gray-200 rounded-md">
             <% @parent_project.files.each do |file| %>
-              <li class="p-3 flex items-center justify-between">
-                <span class="text-sm font-medium text-gray-900"><%= file.filename.to_s %></span>
-                <span class="text-xs text-gray-500"><%= number_to_human_size(file.byte_size) %></span>
+              <li class="p-3 flex items-center justify-between gap-4">
+                <div class="flex-grow min-w-0"> <%# 柔軟に伸縮し、ファイル名が長い場合に備える %>
+                  <span class="text-sm font-medium text-gray-900 truncate block"><%= file.filename.to_s %></span>
+                  <span class="text-xs text-gray-500"><%= number_to_human_size(file.byte_size) %></span>
+                </div>
+                <!-- 削除ボタン追加 -->
+                <div class="flex-shrink-0">
+                  <%= button_to '削除', 
+                      file_remove_parent_project_path(@parent_project, file_id: file.id), 
+                      method: :delete, 
+                      data: { 
+                        confirm: "ファイル「#{file.filename}」を本当に削除しますか？\nこの操作は取り消せません。",
+                        turbo_confirm: "ファイル「#{file.filename}」を本当に削除しますか？\nこの操作は取り消せません。" 
+                      }, 
+                      class: "rounded-lg bg-red-100 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-200" 
+                  %>
+                </div>
               </li>
             <% end %>
           </ul>
