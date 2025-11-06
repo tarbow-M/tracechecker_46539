@@ -80,3 +80,10 @@ gem 'devise'
 # Tailwind CSSをRailsアプリで使うためのGem
 gem "jsbundling-rails"
 gem "cssbundling-rails"
+
+# Excel (.xlsx) や CSV ファイルを読み込むためのGem
+gem 'roo'
+# .xlsx, .xlsm ファイルの高速・省メモリな読み込みのために creek を使用
+gem 'creek'
+# roo が .xls ファイルを読み込むために必要
+gem 'ruby-ole', require: false
