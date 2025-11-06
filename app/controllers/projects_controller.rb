@@ -1,48 +1,79 @@
 class ProjectsController < ApplicationController
-  # before_action :authenticate_user!
-  before_action :set_parent_project
-  before_action :set_project, only: [:edit, :update, :destroy] # :show は除外
-
+  # ApplicationControllerで一括して :authenticate_user! が呼ばれる
+  
   # 先に親プロジェクト(@parent_project)をURLから読み込む
   before_action :set_parent_project
+  # Project が必要なアクションの前に @project を読み込む
+  before_action :set_project, only: [:show, :edit, :update, :destroy, :unlock] # :unlock を追加
 
-  def new
-    @project = @parent_project.projects.build # ファームを親IDと紐づける場合はnewではなくbuildを使用
+  # GET /parent_projects/:parent_project_id/projects/:id
+  # (照合実行画面)
+  def show
+    # @project は set_project で読み込み済み
+    
+    # ファイル選択ドロップダウン用に、親プロジェクトが持つファイル一覧を取得
+    @files = @parent_project.files.joins(:blob).order('active_storage_attachments.created_at DESC')
+
+    # ▼▼▼ リファクタリングにより削除 ▼▼▼
+    # (ダミーデータは file_preview アクション (ParentProjectsController) が
+    #  fetch (AJAX) 経由で提供するため、ここでは不要)
+    # @dummy_data_a = generate_dummy_data(true)
+    # @dummy_data_b = generate_dummy_data(false)
+    # ▲▲▲ 削除ここまで ▲▲▲
   end
 
+  # GET /parent_projects/:parent_project_id/projects/new
+  # (子プロジェクト新規作成フォーム)
+  def new
+    # 親 (@parent_project) に紐づいた空の子 (@project) を作成
+    @project = @parent_project.projects.build
+  end
+
+  # POST /parent_projects/:parent_project_id/projects
   def create
-    @project = @parent_project.projects.build(project_params)
-    @project.status = '未実行' # (デフォルト値を設定する場合)
+    @project = @parent_project.projects.build(project_params_for_create) # create 用のストロングパラメータを使用
+    
+    # (デフォルト値を設定)
+    @project.status = '未実行' 
+    @project.is_locked = false
 
     if @project.save
-      redirect_to parent_project_path(@parent_project), notice: '処理名を作成しました。'
+      # ログを作成
+      create_log(
+        "project_create", 
+        "照合単位 '#{@project.name}' (ID: #{@project.id}) を作成しました。",
+        @project # 関連する子プロジェクト
+      )
+      
+      flash[:notice] = "照合単位 '#{@project.name}' を作成しました。"
+      redirect_to parent_project_path(@parent_project) # 親の詳細ページに戻る
     else
+      # 保存失敗 (バリデーションエラーなど)
+      # new.html.erb を再描画
       render :new, status: :unprocessable_entity
     end
   end
 
-  def show
-    # ネストされた :id (子プロジェクトのID) で @project を検索
-    @project = @parent_project.projects.find(params[:id])
-
-    # ファイル選択ドロップダウン用に、親プロジェクトが持つファイル一覧を取得
-    @files = @parent_project.files.order('active_storage_attachments.created_at DESC')
-
-   # (デモ用のダミーデータをビューに渡す)
-    @dummy_data_a = generate_dummy_data(true)
-    @dummy_data_b = generate_dummy_data(false)
-  end
-
-    # GET /parent_projects/:parent_project_id/projects/:id/edit
+  # GET /parent_projects/:parent_project_id/projects/:id/edit
+  # (子プロジェクト編集フォーム)
   def edit
-    # @project は set_project で設定
+    # @project は set_project で読み込み済み
   end
 
   # PATCH/PUT /parent_projects/:parent_project_id/projects/:id
   def update
-    # @project は set_project で設定
-    if @project.update(project_params)
-      redirect_to parent_project_path(@parent_project), notice: '照合単位を正常に更新しました。'
+    # @project は set_project で読み込み済み
+    if @project.update(project_params_for_update) # update 用のストロングパラメータを使用
+      
+      # ログを作成
+      create_log(
+        "project_update", 
+        "照合単位 '#{@project.name}' (ID: #{@project.id}) を更新しました。",
+        @project
+      )
+      
+      flash[:notice] = "照合単位 '#{@project.name}' を更新しました。"
+      redirect_to parent_project_path(@parent_project)
     else
       render :edit, status: :unprocessable_entity
     end
@@ -50,46 +81,77 @@ class ProjectsController < ApplicationController
 
   # DELETE /parent_projects/:parent_project_id/projects/:id
   def destroy
-    # @project は set_project で設定
+    # @project は set_project で読み込み済み
+    
+    # ログを作成
+    create_log(
+      "project_destroy", 
+      "照合単位 '#{@project.name}' (ID: #{@project.id}) を削除しました。",
+      @project
+    )
+    
     @project.destroy
-    redirect_to parent_project_path(@parent_project), notice: '照合単位を削除しました。', status: :see_other
+    flash[:notice] = "照合単位 '#{@project.name}' を削除しました。"
+    redirect_to parent_project_path(@parent_project), status: :see_other
   end
+  
+  # ▼▼▼ ロック解除 (unlock) アクション (新規追加) ▼▼▼
+  # PATCH /parent_projects/:parent_project_id/projects/:id/unlock
+  def unlock
+    # @project は set_project で読み込み済み
+    if @project.update(is_locked: false, status: '再確認中')
+      
+      # ログを作成
+      create_log(
+        "project_unlock", 
+        "照合単位 '#{@project.name}' (ID: #{@project.id}) のロックを解除しました。",
+        @project
+      )
+      
+      flash[:notice] = "プロジェクトのロックを解除しました。再確認モードで照合を実行できます。"
+    else
+      flash[:alert] = "ロック解除に失敗しました。"
+    end
+    redirect_to parent_project_project_path(@parent_project, @project) # (showページにリダイレクト)
+  end
+
 
   private
 
-  # 親プロジェクトをセットする
+  # 親プロジェクトを読み込む
   def set_parent_project
-    # ログイン中のユーザーに紐づく親プロジェクトのみを検索
+    # (ParentProjectsController からロジックを共通化)
     @parent_project = current_user.parent_projects.find(params[:parent_project_id])
+  rescue ActiveRecord::RecordNotFound
+    flash[:alert] = "指定された親プロジェクトが見つかりません。"
+    redirect_to root_path
   end
 
-  # 子プロジェクトを読み込む (show以外)
+  # @project を読み込む
   def set_project
     @project = @parent_project.projects.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    flash[:alert] = "指定された照合単位が見つかりません。"
+    redirect_to parent_project_path(@parent_project)
   end
 
-  # ストロングパラメータ
-  def project_params
-    params.require(:project).permit(:name, :status, :last_run, :diff_count, :is_locked)
+  # ストロングパラメータ (create時)
+  def project_params_for_create
+    # (status, last_run, diff_count, is_locked は
+    #  DBのデフォルト値 または create アクションで設定するため、:name のみ許可)
+    params.require(:project).permit(:name)
   end
   
-  # (デモ用のダミーデータ)
-  def generate_dummy_data(is_a)
-    base_data = [
-        { key: 'ユーザー数', goal: 500, result: is_a ? 480 : 510, type: 'KPI' }, 
-        { key: 'コンバージョン率', goal: '5.0%', result: '4.9%', type: 'KPI' }, 
-        { key: '平均滞在時間', goal: is_a ? '4分30秒' : '5分00秒', result: '4分32秒', type: 'KPI' }, 
-        { key: '資料Aのみ (項目追加)', goal: 'N/A', result: 'N/A', type: 'KPI' }
-    ]
-    
-    data_b_only = [
-        { key: '直帰率', goal: '30%', result: '35%', type: 'KPI' },
-        { key: '資料Bのみ (項目削除)', goal: '100', result: '120', type: 'KPI' }
-    ]
-
-    final_data = is_a ? base_data : base_data[0..2] + data_b_only
-    
-    # 順序をシャッフル (AとBで順序が異なることをシミュレート)
-    is_a ? final_data.shuffle(random: Random.new(1)) : final_data.shuffle(random: Random.new(2))
+  # ストロングパラメータ (update時)
+  def project_params_for_update
+     # (編集フォーム (edit.html.erb) で変更を許可するカラム)
+     params.require(:project).permit(:name)
   end
+  
+  # ▼▼▼ リファクタリングにより削除 ▼▼▼
+  # (ダミーデータ生成ロジックは ParentProjectsController#file_preview に移行)
+  # def generate_dummy_data(is_a)
+  #   ...
+  # end
+  # ▲▲▲ 削除ここまで ▲▲▲
 end

@@ -1,35 +1,50 @@
 class TemplatesController < ApplicationController
+  # ApplicationControllerで一括して :authenticate_user! が呼ばれる
+
+  # GET /templates (JSON)
+  # 照合実行画面のプルダウンに読み込むためのテンプレート一覧
   def index
-    # 子プロの詳細ページで登録済みの照合範囲のテンプレートをプルダウンで表示するためのもの
     @templates = current_user.templates.order(name: :asc)
     
-    # "range" (jsonb) カラムもJavaScript側で受け取るために "as_json" を使う
-    render json: @templates.as_json(only: [:id, :name, :range])
+    # "range" (json) と "mapping" (json) カラムもJavaScript側で受け取る
+    render json: @templates.as_json(only: [:id, :name, :range, :mapping])
   end
 
+  # POST /templates (JSON)
+  # 照合実行画面からテンプレートを保存
   def create
-   @template = current_user.templates.new(template_params)
+    @template = current_user.templates.new(template_params)
 
     if @template.save
-      # 保存成功 -----------
-      # ログを作成 
+      # 保存成功
+      
+      # ログを作成
       create_log(
         "template_create",
         "テンプレート '#{@template.name}' (ID: #{@template.id}) を作成しました。",
         nil # (テンプレートは特定のプロジェクトには紐づかない)
       )
 
-      render json: @template.as_json(only: [:id, :name, :range]), status: :created # as_json で range も含めて返す
+      # as_json で range と mapping も含めて返す
+      render json: @template.as_json(only: [:id, :name, :range, :mapping]), status: :created
     else
-      # 保存失敗（エラー文表示）
+      # 保存失敗
       render json: { errors: @template.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
+  # DELETE /templates/:id (JSON)
   def destroy
     @template = current_user.templates.find_by(id: params[:id])
     
     if @template
+      # ログを作成
+      create_log(
+        "template_destroy",
+        "テンプレート '#{@template.name}' (ID: #{@template.id}) を削除しました。",
+        nil
+      )
+      
       @template.destroy
       render json: { message: 'Template deleted successfully.' }, status: :ok
     else
@@ -39,14 +54,17 @@ class TemplatesController < ApplicationController
 
   private
 
+  # Strong Parameters
   def template_params
-    # fetch (JavaScript) から送られてくる "range" (JSON) を許可する（"range" はキーを持つオブジェクト(ハッシュ)なので、キーの指定が必要）
-    # デモ版のJavaScriptロジック (selectionCoordsA, selectionCoordsB) は
-    # { "a": [...], "b": [...] } というJSONオブジェクトを送ってくることを想定
+    # "range" (座標) と "mapping" (解釈ルール) の両方を許可する
     
-    # params.require(:template).permit(:name, range: {}) # {} だと空のハッシュしか許可されない
-    
-    # "range" の中身が { "a": [...], "b": [...] } であることを明示的に許可する
-    params.require(:template).permit(:name, range: [a: [], b: []])
+    params.require(:template).permit(
+      :name, 
+      # range: { a: [], b: [] } # (配列の中身を厳密にチェック)
+      range: [:a, :b], # (a と b というキーを持つハッシュを許可)
+      
+      # mapping: { key_orientation: "...", key_index: "...", value_index: "..." }
+      mapping: [:key_orientation, :key_index, :value_index]
+    )
   end
 end

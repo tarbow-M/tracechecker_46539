@@ -5,6 +5,13 @@ Rails.application.routes.draw do
   root 'parent_projects#index'  
 
   resources :parent_projects do
+    
+    # ファイルプレビュー用のルーティング
+    member do
+      # (:id ではなく :file_id でファイルBLOBのIDを受け取る)
+      get 'file_preview/:file_id', to: 'parent_projects#file_preview', as: 'file_preview'
+    end
+
     resources :projects, except: [:index] do
       resources :archived_results, only: [:create]
     end
