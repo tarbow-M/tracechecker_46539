@@ -30,7 +30,7 @@
   <div class="bg-white shadow-xl rounded-lg overflow-hidden mb-8">
     <div class="p-6 sm:p-8">
       <h2 class="text-xl font-semibold text-gray-900 mb-4">
-        1. 照合対象ファイル
+        1. 照合ファイルアップロード
       </h2>
       
       <!-- 
@@ -51,7 +51,7 @@
           </div>
         <% end %>
 
-        <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-plus-icon lucide-file-plus">
+        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-plus-icon lucide-file-plus">
           <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
           <path d="M14 2v5a1 1 0 0 0 1 1h5"/>
           <path d="M9 15h6"/>
@@ -126,10 +126,10 @@
     <div class="p-6 sm:p-8">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-semibold text-gray-900">
-          2. 照合単位（子プロジェクト）
+          2. 照合作業一覧
         </h2>
         <!-- TODO: 子プロジェクト新規作成 (new_project_path) へのリンク -->
-        <%= link_to '新規照合単位を作成', 
+        <%= link_to '照合作業を新規作成', 
             new_parent_project_project_path(@parent_project), 
             class: "rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-green-700" 
         %>
@@ -140,7 +140,7 @@
         <table class="min-w-full divide-y divide-gray-300">
           <thead class="bg-gray-50">
             <tr>
-              <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">照合単位名</th>
+              <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">作業名</th>
               <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">ステータス</th>
               <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">最終実行日時</th>
               <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">差分</th>
@@ -176,7 +176,7 @@
                   </td>
                   <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                     <!-- TODO: 照合実行 (project_path(project)) へのリンク -->
-                    <%= link_to '照合実行', parent_project_project_path(@parent_project, project), class: "text-blue-600 hover:text-blue-900" %>
+                    <%= link_to '照合作業へ', parent_project_project_path(@parent_project, project), class: "text-blue-600 hover:text-blue-900" %>
                   </td>
                 </tr>
               <% end %>
