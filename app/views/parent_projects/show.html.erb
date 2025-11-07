@@ -103,10 +103,9 @@
                   <%= button_to '削除', 
                       file_remove_parent_project_path(@parent_project, file_id: file.id), 
                       method: :delete, 
-                      data: { 
-                        confirm: "ファイル「#{file.filename}」を本当に削除しますか？\nこの操作は取り消せません。",
+                      data: {
                         turbo_confirm: "ファイル「#{file.filename}」を本当に削除しますか？\nこの操作は取り消せません。" 
-                      }, 
+                      },
                       class: "rounded-lg bg-red-100 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-200" 
                   %>
                 </div>
@@ -190,4 +189,3 @@
   </div>
 
 </div>
-

@@ -10,7 +10,7 @@ Rails.application.routes.draw do
     member do
       # (:id ではなく :file_id でファイルBLOBのIDを受け取る)
       get 'file_preview/:file_id', to: 'parent_projects#file_preview', as: 'file_preview'
-      get 'file_remove/:file_id', to: 'parent_projects#file_remove', as: 'file_remove'
+      delete 'file_remove/:file_id', to: 'parent_projects#file_remove', as: 'file_remove'
     end
 
     resources :projects, except: [:index] do
