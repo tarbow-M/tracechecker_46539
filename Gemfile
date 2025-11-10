@@ -69,10 +69,13 @@ end
 
 # PostgreSQLを本番環境で使用するためのGem
 group :production do
-  gem 'pg'
+  # gem 'pg'
 end
 
 gem 'pry-rails'
+
+# 日本語対応gem
+gem 'rails-i18n'
 
 # ユーザー認証機能gem
 gem 'devise'
