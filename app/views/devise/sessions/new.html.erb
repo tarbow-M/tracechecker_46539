@@ -9,6 +9,13 @@
   <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
     <div class="bg-white py-8 px-4 shadow-xl sm:rounded-xl sm:px-10">
       
+      <%# ログイン失敗時のメッセージ(flash)を表示 %>
+      <% if alert %>
+        <div class="my-4 p-3 rounded-lg bg-red-100 text-red-700 border border-red-200" role="alert" data-turbo-cache="false">
+          <%= alert %>
+        </div>
+      <% end %>
+
       <!-- エラーメッセージ表示エリア -->
       <%= render "devise/shared/error_messages", resource: resource %>
 

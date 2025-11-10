@@ -11,7 +11,7 @@ class User < ApplicationRecord
 
   ## Validation ------------------------------------------------
   # personal_num は必須かつ一意
-  validates :personal_num, presence: true, uniqueness: true
+  validates :personal_num, presence: true, uniqueness: true, format: { with: /\A\d+\z/, message: "は数字で入力してください" }
   # name は必須
   validates :name, presence: true
 end

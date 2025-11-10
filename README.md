@@ -27,12 +27,12 @@
 
 ## Logsテーブル
 
-| Column         | Type       | Options     |
-| -------------- | ---------- | ----------- |
-| action_type    | string     | null: false            |
-| description   | text      |
-| user    | references | null: false, foreign_key: true |
-| project    | references | foreign_key: true (null許容) |
+| Column      | Type       | Options     |
+| ----------- | ---------- | ----------- |
+| action_type | string     | null: false            |
+| description | text       |
+| user        | references | null: false, foreign_key: true |
+| project     | references | foreign_key: true |
 
 ### Association
 - belongs_to :user

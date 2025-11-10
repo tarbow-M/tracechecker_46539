@@ -5,7 +5,12 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
       <h1 class="text-3xl font-bold text-gray-800">
-        <%= @parent_project.name %>
+        <div class="flex items-center gap-x-3">
+          <a href="<%= root_path %>" class="text-gray-500 hover:text-gray-700 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-from-line-icon lucide-arrow-left-from-line"><path d="m9 6-6 6 6 6"/><path d="M3 12h14"/><path d="M21 19V5"/></svg>
+          </a>
+          <span><%= @parent_project.name %></span>
+        </div>
       </h1>
       <p class="text-sm text-gray-500 mt-1">
         ID: <%= @parent_project.id %> | 作成日: <%= l @parent_project.created_at, format: :short %>
@@ -33,10 +38,7 @@
         1. 照合ファイルアップロード
       </h2>
       
-      <!-- 
-        ▼▼▼ ActiveStorage用フォーム修正 ▼▼▼
-        @parent_project (showページ) に PATCH リクエストを送る 
-      -->
+      <!-- ActiveStorage用フォーム @parent_project (showページ) に PATCH リクエストを送る -->
       <%= form_with(model: @parent_project, class: "p-6 border border-dashed border-gray-300 rounded-lg text-center") do |form| %>
         
         <!-- エラー表示 (updateに失敗した場合) -->
