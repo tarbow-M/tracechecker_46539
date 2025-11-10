@@ -1,8 +1,26 @@
 ja:
   activerecord:
+    models:
+      user: ユーザー
+      parent_project: 業務
+      project: 照合作業
+      template: 引用照合エリア
+      archived_result: 照合結果
     attributes:
       user:
-        nickname: ニックネーム
-      tweet:
-        text: テキスト
-        image: 画像
+        personal_num: 個人番号
+        name: 名前
+        email: メールアドレス
+      parent_project:
+        name: 業務名
+      project:
+        name: 照合作業名
+        status: 照合状況
+        last_run: 最終実行日時
+        diff_count: 差分件数
+        is_locked: ロック状態
+      template:
+        name: 引用照合エリア
+      archived_result:
+        name: 照合結果
+
