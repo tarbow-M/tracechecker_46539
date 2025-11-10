@@ -13,5 +13,8 @@ module Tracechecker46539
     # アプリケーションのタイムゾーンを日本時間(JST)に設定
     config.time_zone = 'Tokyo'
 
+    # 日本語の言語設定
+    config.i18n.default_locale = :ja
+
   end
 end
