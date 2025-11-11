@@ -621,7 +621,6 @@ function setupTemplateListeners() {
         key_index: parseInt(keyIndex.value, 10),
         value_index: parseInt(valueIndex.value, 10)
       };
-      // ▲▲▲ 修正ここまで ▲▲▲
 
       const range = {
         a: selectionCoordsA.map(c => c.coords),
@@ -1022,11 +1021,20 @@ function setupArchiveButtonListener() {
 function saveArchive(archiveName) {
   const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
+  // プレビューのHTMLを取得
+  const tableA_HTML = document.getElementById('table-A').innerHTML;
+  const tableB_HTML = document.getElementById('table-B').innerHTML;
+
   const archiveData = {
     name: archiveName,
     diff_count: currentDiffCount,
     file_a_id: selectedFileAId,
-    file_b_id: selectedFileBId
+    file_b_id: selectedFileBId,
+    // preview_data を追加
+    preview_data: {
+      table_a_html: tableA_HTML,
+      table_b_html: tableB_HTML
+    }
   };
   const resultsData = comparisonResultsCache;
   // ERBのパスをJavaScript変数から取得
@@ -1266,20 +1274,7 @@ function unlockProject() {
     });
 }
 
-// showMessage関数は元のコードにはありませんでしたが、alertの代替として追加するならここに定義します。
-// 例:
-// function showMessage(message, type = 'info') {
-//   const messageArea = document.getElementById('global-message-area'); // HTMLにこの要素が必要
-//   if (messageArea) {
-//     messageArea.innerHTML = `<div class="p-3 rounded-md ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}">${message}</div>`;
-//     setTimeout(() => messageArea.innerHTML = '', 5000);
-//   } else {
-//     alert(message);
-//   }
-// }
 
-// 現在のコードでは saveTemplate の成功時に showMessage が呼ばれていますが、
-// その関数が定義されていないため、ここではコメントアウトまたは alert に置き換えることを推奨します。
 function showMessage(message, type = 'info') {
   alert(message); // 一時的にalertで対応
 }

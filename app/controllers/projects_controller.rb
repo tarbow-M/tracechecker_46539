@@ -16,12 +16,12 @@ class ProjectsController < ApplicationController
 
     if @project.is_locked?
       # このプロジェクトに関連する最新の照合結果を取得
-      latest_archived_result = @project.archived_results.order(created_at: :desc).first
+      @latest_archived_result = @project.archived_results.order(created_at: :desc).first
       # 最新の照合結果が存在する場合のみ
-      if latest_archived_result
+      if @latest_archived_result
         # 最新の結果で使われたファイルIDをインスタンス変数にセット
-        @selected_file_a_id = latest_archived_result.file_a_id
-        @selected_file_b_id = latest_archived_result.file_b_id
+        @selected_file_a_id = @latest_archived_result.file_a_id
+        @selected_file_b_id = @latest_archived_result.file_b_id
       end
     end
   end

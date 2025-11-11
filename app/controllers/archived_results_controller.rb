@@ -86,7 +86,8 @@ class ArchivedResultsController < ApplicationController
       :name, 
       :diff_count,
       :file_a_id, 
-      :file_b_id
+      :file_b_id,
+      preview_data: [:table_a_html, :table_b_html] # preview_data を許可
       # child_project_id は @project.archived_results.new で自動セット
     )
   end

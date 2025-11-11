@@ -4,7 +4,7 @@ import Rails from "@rails/ujs"
 // Active Storage (ダイレクトアップロードのため)
 import * as ActiveStorage from "@rails/activestorage"
 
-// checker,jsをインポート
+// checker.js（照合処理）をインポート
 import "./checker"
 
 // (Stimulus コントローラは /controllers フォルダが作成されたらここに追加します)

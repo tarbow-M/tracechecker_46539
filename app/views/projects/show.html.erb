@@ -157,7 +157,7 @@
         
         <!-- (ロックされている場合は「引用照合エリア保存」ボタンを無効化) -->
         <button id="save-template-button" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed" 
-                <%= 'disabled' if @project.is_locked? %>>
+          <%= 'disabled' if @project.is_locked? %>>
           選択範囲を引用照合エリアとして保存
         </button>
         
