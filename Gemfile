@@ -69,7 +69,7 @@ end
 
 # PostgreSQLを本番環境で使用するためのGem
 group :production do
-  # gem 'pg'
+  gem 'pg'
 end
 
 gem 'pry-rails'

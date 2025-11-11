@@ -14,12 +14,16 @@ class ProjectsController < ApplicationController
     # ファイル選択ドロップダウン用に、親プロジェクトが持つファイル一覧を取得
     @files = @parent_project.files.joins(:blob).order('active_storage_attachments.created_at DESC')
 
-    # ▼▼▼ リファクタリングにより削除 ▼▼▼
-    # (ダミーデータは file_preview アクション (ParentProjectsController) が
-    #  fetch (AJAX) 経由で提供するため、ここでは不要)
-    # @dummy_data_a = generate_dummy_data(true)
-    # @dummy_data_b = generate_dummy_data(false)
-    # ▲▲▲ 削除ここまで ▲▲▲
+    if @project.is_locked?
+      # このプロジェクトに関連する最新の照合結果を取得
+      latest_archived_result = @project.archived_results.order(created_at: :desc).first
+      # 最新の照合結果が存在する場合のみ
+      if latest_archived_result
+        # 最新の結果で使われたファイルIDをインスタンス変数にセット
+        @selected_file_a_id = latest_archived_result.file_a_id
+        @selected_file_b_id = latest_archived_result.file_b_id
+      end
+    end
   end
 
   # GET /parent_projects/:parent_project_id/projects/new

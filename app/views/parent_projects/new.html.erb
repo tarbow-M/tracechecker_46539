@@ -11,18 +11,7 @@
       <%= form_with(model: @parent_project, class: "space-y-6") do |form| %>
         
         <!-- バリデーションエラー（保存失敗時）のメッセージをここに表示します -->
-        <% if @parent_project.errors.any? %>
-          <div class="my-4 p-3 rounded-lg bg-red-100 text-red-700 border border-red-200" role="alert">
-            <h2 class="font-bold mb-2">
-              <%= @parent_project.errors.count %> 件のエラーにより保存できませんでした:
-            </h2>
-            <ul class="list-disc list-inside">
-              <% @parent_project.errors.full_messages.each do |message| %>
-                <li><%= message %></li>
-              <% end %>
-            </ul>
-          </div>
-        <% end %>
+        <%= render "layouts/error_messages", resource: @parent_project %>
 
         <!-- プロジェクト名 入力欄 -->
         <div>

@@ -8,10 +8,10 @@
       
       <!-- ヘッダー -->
       <h1 class="text-2xl font-bold text-gray-800 mb-2">
-        新規照合単位（子プロジェクト）作成
+        照合作業を新規作成
       </h1>
       <p class="text-sm text-gray-500 mb-6">
-        親プロジェクト: 
+        業務名: 
         <span class="font-medium text-blue-600"><%= @parent_project.name %></span>
       </p>
       
@@ -19,20 +19,11 @@
       <%= form_with(model: [ @parent_project, @project ], class: "space-y-6") do |form| %>
         
         <!-- エラー表示 -->
-        <% if @project.errors.any? %>
-          <div class="mb-4 rounded-md border border-red-200 bg-red-50 p-4">
-            <h3 class="text-sm font-medium text-red-800">エラーが発生しました:</h3>
-            <ul class="mt-2 list-disc list-inside text-sm text-red-700">
-              <% @project.errors.full_messages.each do |message| %>
-                <li><%= message %></li>
-              <% end %>
-            </ul>
-          </div>
-        <% end %>
+        <%= render "layouts/error_messages", resource: @project %>
 
         <!-- フォーム入力欄 -->
         <div>
-          <%= form.label :name, '照合単位名', class: "block text-sm font-medium leading-6 text-gray-900" %>
+          <%= form.label :name, '照合作業名', class: "block text-sm font-medium leading-6 text-gray-900" %>
           <div class="mt-2">
             <%= form.text_field :name, class: "block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6", placeholder: "例: Q1報告書 vs Q2報告書" %>
           </div>
