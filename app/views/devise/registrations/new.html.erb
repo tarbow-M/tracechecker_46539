@@ -9,7 +9,7 @@
     <div class="bg-white py-8 px-4 shadow-xl sm:rounded-xl sm:px-10">
       
       <!-- エラーメッセージ表示エリア -->
-      <%= render "devise/shared/error_messages", resource: resource %>
+      <%= render "layouts/error_messages", resource: resource %>
 
       <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-6" }) do |f| %>
         
