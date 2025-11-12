@@ -265,6 +265,8 @@
   };
 </script>
 
+<%#= javascript_include_tag "checker", type: "module", "data-turbo-track": "reload", defer: true %>
+
 <!-- 照合エリア保存、影向結果保存モーダル（new/create作ってMVCモデルで作成すると内容が保存される前にページ移動することになりページの状態を容易に保てないためモーダルとして埋め込む） -->
 <!-- 1. 照合エリア保存モーダル -->
 <div id="template-name-modal" class="modal fixed inset-0 flex items-center justify-center hidden z-50 bg-gray-900 bg-opacity-50">

@@ -7,9 +7,6 @@ import * as ActiveStorage from "@rails/activestorage"
 // checker.js（照合処理）をインポート
 import "./checker"
 
-// (Stimulus コントローラは /controllers フォルダが作成されたらここに追加します)
-// import "./controllers"
-
 // Rails UJS と Active Storage を開始
 Rails.start()
 ActiveStorage.start()
