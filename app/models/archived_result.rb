@@ -6,6 +6,11 @@ class ArchivedResult < ApplicationRecord
     belongs_to :file_a, class_name: 'ActiveStorage::Attachment', foreign_key: 'file_a_id'
     belongs_to :file_b, class_name: 'ActiveStorage::Attachment', foreign_key: 'file_b_id'
 
+    # --- PostgreSQLのJsonb型に対応するためのメソッド ---
+    def preview_data
+      read_attribute(:preview_data) || {}
+    end
+    
     # --- Validations ---
     validates :name, presence: true
 end
