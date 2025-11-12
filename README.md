@@ -60,8 +60,6 @@
 | name           | string     | null: false |
 | status         | string     |
 | is_locked      | boolean    | default: false   |
-| last_run       | datetime   |
-| diff_count     | integer    |
 | parent_project | references | null: false, foreign_key: true |
 
 ### Association

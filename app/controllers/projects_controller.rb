@@ -72,11 +72,11 @@ class ProjectsController < ApplicationController
       # ログを作成
       create_log(
         "project_update", 
-        "照合単位 '#{@project.name}' (ID: #{@project.id}) を更新しました。",
+        "照合作業 '#{@project.name}' (ID: #{@project.id}) を更新しました。",
         @project
       )
       
-      flash[:notice] = "照合単位 '#{@project.name}' を更新しました。"
+      flash[:notice] = "照合作業 '#{@project.name}' を更新しました。"
       redirect_to parent_project_path(@parent_project)
     else
       render :edit, status: :unprocessable_entity
@@ -176,10 +176,4 @@ class ProjectsController < ApplicationController
      params.require(:project).permit(:name)
   end
   
-  # ▼▼▼ リファクタリングにより削除 ▼▼▼
-  # (ダミーデータ生成ロジックは ParentProjectsController#file_preview に移行)
-  # def generate_dummy_data(is_a)
-  #   ...
-  # end
-  # ▲▲▲ 削除ここまで ▲▲▲
 end

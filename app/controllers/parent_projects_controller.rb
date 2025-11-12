@@ -20,7 +20,7 @@ class ParentProjectsController < ApplicationController
     # @parent_project は set_parent_project で読み込み済み
     
     # 子プロジェクト(照合単位)の一覧を取得
-    @projects = @parent_project.projects.order(created_at: :desc)
+    @projects = @parent_project.projects.includes(:archived_results).order(created_at: :desc)
     
     # 添付されているファイル一覧を取得 (N+1問題対策)
     # (ActiveStorage::Attachment を created_at で並び替えてから、blob を読み込む)
