@@ -71,18 +71,20 @@
 
 ## ArchivedResultsテーブル
 
-| Column        | Type       | Options     |
-| ------------- | ---------- | ----------- |
-| name          | string     | null: false |
-| diff_count    | integer    |
-| file_a        | references | foreign_key: (ActiveStorageのID想定) |
-| file_b        | references | foreign_key: (ActiveStorageのID想定) |
-| child_project | references | null: false, foreign_key: { to_table: :projects } |
+| Column        | Type       | Options                                          |
+| ------------- | ---------- | ------------------------------------------------ |
+| name          | string     | null: false                                      |
+| diff_count    | integer    |                                                  |
+| preview_data  | json       |                                                  |
+| file_a_id     | references | foreign_key: { to_table: :active_storage_attachments } |
+| file_b_id     | references | foreign_key: { to_table: :active_storage_attachments } |
+| child_project | references | null: false, foreign_key: { to_table: :projects }  |
 
 ### Association
 - has_many :trace_results
 - belongs_to :child_project, class_name: 'Project'
-
+- belongs_to :file_a, class_name: 'ActiveStorage::Attachment'
+- belongs_to :file_b, class_name: 'ActiveStorage::Attachment'
 
 ## TraceResultsテーブル
 
@@ -96,4 +98,3 @@
 
 ### Association
 - belongs_to :archived_result
-

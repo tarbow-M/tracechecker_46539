@@ -69,7 +69,7 @@ end
 
 # PostgreSQLを本番環境で使用するためのGem（CPUアーキテクチャにarm64を使用しているためmySQL環境ではコメントアウトすること）
 group :production do
-  gem 'pg'
+  # gem 'pg'
 end
 
 gem 'pry-rails'
