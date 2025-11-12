@@ -142,12 +142,22 @@
 
 
   <!-- 2-5. 照合結果 (初期状態では非表示) -->
-  <div id="result-summary-section" class="hidden bg-white p-6 rounded-lg shadow-lg border-t-4 border-blue-500 mb-6">
+  <%# ▼▼▼ ロック済みの場合は最初から表示、そうでなければ hidden ▼▼▼ %>
+  <div id="result-summary-section" class="<%= @project.is_locked? && @latest_archived_result ? '' : 'hidden' %> bg-white p-6 rounded-lg shadow-lg border-t-4 border-blue-500 mb-6">
     <h2 class="text-2xl font-bold text-gray-900 mb-4">照合結果</h2>
     <div class="flex flex-col md:flex-row justify-between items-start gap-6">
       <!-- サマリー本文 -->
       <div id="summary-content" class="text-lg space-y-1">
-        <!-- (JavaScript: startComparison() によって内容が挿入される) -->
+        <%# ▼▼▼ ロック済みの場合はDBからサマリーを復元 ▼▼▼ %>
+        <% if @project.is_locked? && @latest_archived_result %>
+          <p><strong>照合結果名:</strong> <%= @latest_archived_result.name %></p>
+          <p><strong>ファイルA:</strong> <%= @latest_archived_result.file_a.blob.filename %></p>
+          <p><strong>ファイルB:</strong> <%= @latest_archived_result.file_b.blob.filename %></p>
+          <p class="text-red-600 font-bold"><strong>差分件数:</strong> <%= @latest_archived_result.diff_count %> 件</p>
+          <p class="text-sm text-gray-500 pt-2">保存日時: <%= l(@latest_archived_result.created_at, format: :long) %></p>
+        <% else %>
+          <!-- (JavaScript: startComparison() によって内容が挿入される) -->
+        <% end %>
       </div>
       <!-- 保存ボタン -->
       <div class="flex flex-col gap-3 w-full md:w-auto">
@@ -182,17 +192,28 @@
       
       <!-- 資料A プレビュー -->
       <div id="preview-A" class="doc-view bg-gray-50 p-4 rounded-lg shadow-inner border border-gray-200 min-h-[400px] overflow-x-auto relative">
-        <h3 id="preview-A-header" class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3">資料A: (ファイル未選択)</h3>
+        <h3 id="preview-A-header" class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3">
+          <%# ▼▼▼ ロック済みの場合はDBからファイル名を復元 ▼▼▼ %>
+          資料A: <%= @latest_archived_result ? @latest_archived_result.file_a.blob.filename : '(ファイル未選択)' %>
+        </h3>
         <table class="w-full text-sm text-left text-gray-500 table-auto">
           <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-            <tr>
-              <th scope="col" colspan="3" class="px-4 py-2">
-                (ファイルを選択してください)
-              </th>
-            </tr>
+            <%# ▼▼▼ プレビューデータがない場合のみヘッダーを表示 ▼▼▼ %>
+            <% if !@latest_archived_result&.preview_data %>
+              <tr>
+                <th scope="col" colspan="3" class="px-4 py-2">
+                  (ファイルを選択してください)
+                </th>
+              </tr>
+            <% end %>
           </thead>
           <tbody id="table-A">
-            <!-- (JavaScript: generatePreviewTable() によって動的に挿入される) -->
+            <%# ▼▼▼ ロック済みの場合はDBからプレビューを復元 ▼▼▼ %>
+            <% if @latest_archived_result&.preview_data&.dig('table_a_html') %>
+              <%= raw @latest_archived_result.preview_data['table_a_html'] %>
+            <% else %>
+              <!-- (JavaScript: generatePreviewTable() によって動的に挿入される) -->
+            <% end %>
           </tbody>
         </table>
         <!-- ▼▼▼ 選択ボックス用コンテナ ▼▼▼ -->
@@ -201,17 +222,28 @@
 
       <!-- 資料B プレビュー -->
       <div id="preview-B" class="doc-view bg-gray-50 p-4 rounded-lg shadow-inner border border-gray-200 min-h-[400px] overflow-x-auto relative">
-        <h3 id="preview-B-header" class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3">資料B: (ファイル未選択)</h3>
+        <h3 id="preview-B-header" class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3">
+          <%# ▼▼▼ ロック済みの場合はDBからファイル名を復元 ▼▼▼ %>
+          資料B: <%= @latest_archived_result ? @latest_archived_result.file_b.blob.filename : '(ファイル未選択)' %>
+        </h3>
         <table class="w-full text-sm text-left text-gray-500 table-auto">
           <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-             <tr>
-              <th scope="col" colspan="3" class="px-4 py-2">
-                (ファイルを選択してください)
-              </th>
-            </tr>
+            <%# ▼▼▼ プレビューデータがない場合のみヘッダーを表示 ▼▼▼ %>
+            <% if !@latest_archived_result&.preview_data %>
+               <tr>
+                <th scope="col" colspan="3" class="px-4 py-2">
+                  (ファイルを選択してください)
+                </th>
+              </tr>
+            <% end %>
           </thead>
           <tbody id="table-B">
-            <!-- (JavaScript: generatePreviewTable() によって動的に挿入される) -->
+            <%# ▼▼▼ ロック済みの場合はDBからプレビューを復元 ▼▼▼ %>
+            <% if @latest_archived_result&.preview_data&.dig('table_b_html') %>
+              <%= raw @latest_archived_result.preview_data['table_b_html'] %>
+            <% else %>
+              <!-- (JavaScript: generatePreviewTable() によって動的に挿入される) -->
+            <% end %>
           </tbody>
         </table>
         <!-- ▼▼▼ 選択ボックス用コンテナ ▼▼▼ -->
