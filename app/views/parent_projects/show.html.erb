@@ -171,10 +171,20 @@
                     </span>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                    <%= project.last_run ? l(project.last_run, format: :short) : '-' %>
+                    <%# ▼▼▼ 各プロジェクトに紐づく最新の結果を取得 ▼▼▼ %>
+                    <% latest_result = project.archived_results.order(created_at: :desc).first %>
+                    <% if latest_result %>
+                      <%= l(latest_result.created_at, format: :short) %>
+                    <% else %>
+                      -
+                    <% end %>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm font-medium text-red-600">
-                    <%= project.diff_count.present? ? "#{project.diff_count}件" : '-' %>
+                    <% if latest_result %>
+                      <%= "#{latest_result.diff_count}件" %>
+                    <% else %>
+                      -
+                    <% end %>
                   </td>
                   <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                     <!-- TODO: 照合実行 (project_path(project)) へのリンク -->

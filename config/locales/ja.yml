@@ -1,4 +1,8 @@
 ja:
+  time:
+    formats:
+      long: "%Y年%m月%d日(%a) %H時%M分"  # 例: 2023年10月27日(金) 15時30分
+      short: "%y/%m/%d %H:%M"           # 例: 23/10/27 15:30
   activerecord:
     models:
       user: ユーザー

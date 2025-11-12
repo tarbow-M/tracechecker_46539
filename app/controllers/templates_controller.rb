@@ -7,7 +7,7 @@ class TemplatesController < ApplicationController
     @templates = current_user.templates.order(name: :asc)
     
     # "range" (json) と "mapping" (json) カラムもJavaScript側で受け取る
-    render json: @templates.as_json(only: [:id, :name, :range, :mapping])
+    render json: @templates.as_json(only: [:id, :name, :range])
   end
 
   # POST /templates (JSON)
@@ -26,7 +26,7 @@ class TemplatesController < ApplicationController
       )
 
       # as_json で range と mapping も含めて返す
-      render json: @template.as_json(only: [:id, :name, :range, :mapping]), status: :created
+      render json: @template.as_json(only: [:id, :name, :range]), status: :created
     else
       # 保存失敗
       render json: { errors: @template.errors.full_messages }, status: :unprocessable_entity
@@ -57,14 +57,6 @@ class TemplatesController < ApplicationController
   # Strong Parameters
   def template_params
     # "range" (座標) と "mapping" (解釈ルール) の両方を許可する
-    
-    params.require(:template).permit(
-      :name, 
-      # range: { a: [], b: [] } # (配列の中身を厳密にチェック)
-      range: [:a, :b], # (a と b というキーを持つハッシュを許可)
-      
-      # mapping: { key_orientation: "...", key_index: "...", value_index: "..." }
-      mapping: [:key_orientation, :key_index, :value_index]
-    )
+    params.require(:template).permit(:name, range: {}) # rangeハッシュ全体を許可
   end
 end

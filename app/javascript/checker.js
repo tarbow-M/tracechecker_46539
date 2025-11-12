@@ -506,6 +506,7 @@ function removeSelectionBox() {
     selectionBox = null;
 }
 
+// --- ハイライト管理 ---
 function clearDocHighlights(docType, className) {
     document.querySelectorAll(`#preview-${docType} .${className}`).forEach(cell => {
         cell.classList.remove(className);
@@ -599,6 +600,7 @@ function updateKeySelectionStatus() {
 // 3. テンプレート機能 (Fetch)
 // ==========================================
 
+// テンプレート関連のイベントリスナーをセットアップする関数 --------------
 function setupTemplateListeners() {
   const form = document.getElementById('template-name-form');
   if (form) {
@@ -606,30 +608,17 @@ function setupTemplateListeners() {
       e.preventDefault();
       const templateName = document.getElementById('template-name').value;
 
-      // ▼▼▼ モーダルから "mapping" 情報を読み取る ▼▼▼
-      const orientation = document.querySelector('input[name="mapping_orientation"]:checked').value;
-      const keyIndex = document.getElementById('mapping-key-index');
-      const valueIndex = document.getElementById('mapping-value-index');
-
-      if (!keyIndex.value || !valueIndex.value) {
-          alert("キーと値の列/行番号を正しく入力してください。");
-          return;
-      }
-
-      const mapping = {
-        key_orientation: orientation,
-        key_index: parseInt(keyIndex.value, 10),
-        value_index: parseInt(valueIndex.value, 10)
-      };
-
+      // rangeオブジェクト作成
       const range = {
         a: selectionCoordsA.map(c => c.coords),
         b: selectionCoordsB.map(c => c.coords)
       };
-      saveTemplate(templateName, range, mapping);
+      // mapping引数を削除し、rangeのみを渡す
+      saveTemplate(templateName, range);
     });
   }
 
+  // 「選択範囲を引用照合エリアとして保存」ボタンのリスナー（テンプレート保存） ----------
   const saveButton = document.getElementById('save-template-button');
   if (saveButton) {
     saveButton.addEventListener('click', () => {
@@ -646,6 +635,7 @@ function setupTemplateListeners() {
     });
   }
 
+  // テンプレート選択プルダウンリスナー -----------------------------
   const select = document.getElementById('template_select');
   if (select) {
     select.addEventListener('change', (e) => {
@@ -654,6 +644,7 @@ function setupTemplateListeners() {
   }
 }
 
+// テンプレート一覧をサーバーから取得してプルダウンに反映する関数 ----------------
 function loadTemplates() {
   const select = document.getElementById('template_select');
   if (!select || select.disabled) return;
@@ -679,8 +670,8 @@ function loadTemplates() {
     });
 }
 
-// (saveTemplate を "mapping" も送信するように修正)
-function saveTemplate(templateName, range, mapping) {
+// テンプレートのnameとrangeをサーバーに保存する関数 ------------------------------
+function saveTemplate(templateName, range) {
   const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
   fetch('/templates', {
@@ -695,8 +686,7 @@ function saveTemplate(templateName, range, mapping) {
         range: {
           a: range.a,
           b: range.b
-        },
-        mapping: mapping // (mapping を追加)
+        }
       }
     })
   })
@@ -716,7 +706,7 @@ function saveTemplate(templateName, range, mapping) {
   });
 }
 
-// (applyTemplate を "data-key" 属性なしで動作するように修正)
+// (applyTemplate を "data-key" 属性なしで動作するように修正) ------------------------
 function applyTemplate(templateId) {
   resetSelection();
   resetKeySelection(); // キー選択もリセット
@@ -726,13 +716,6 @@ function applyTemplate(templateId) {
   if (!template || !template.range) {
      console.warn("Template data or range not found in cache.");
      return;
-  }
-
-  // (template.mapping をモーダルに反映)
-  if (template.mapping) {
-    document.getElementById('mapping-orientation-' + (template.mapping.key_orientation || 'column')).checked = true;
-    document.getElementById('mapping-key-index').value = template.mapping.key_index || 0;
-    document.getElementById('mapping-value-index').value = template.mapping.value_index || 1;
   }
 
   const allCoords = (template.range.a || []).concat(template.range.b || []);
