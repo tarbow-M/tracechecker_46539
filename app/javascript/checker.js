@@ -804,7 +804,6 @@ function startComparison() {
                 comparisonResultsCache.push({
                     key: valueA,
                     flag: 'match',
-                    comment: null,
                     target_cell: {
                         a: cellDataA.coords,
                         b: cellDataB.coords
@@ -828,7 +827,6 @@ function startComparison() {
             comparisonResultsCache.push({
                 key: valueA,
                 flag: 'unmatched_a',
-                comment: null,
                 target_cell: {
                     a: cellDataA.coords,
                     b: null
@@ -848,7 +846,6 @@ function startComparison() {
             comparisonResultsCache.push({
                 key: cellDataB.value?.trim() || "",
                 flag: 'unmatched_b',
-                comment: null,
                 target_cell: {
                     a: null,
                     b: cellDataB.coords
@@ -1100,7 +1097,7 @@ function exportResultsToCSV() {
   let csvContent = "data:text/csv;charset=utf-8,";
   // ヘッダー行 (BOM + ヘッダー)
   // (Excel for Windows がUTF-8を正しく認識するために \uFEFF (BOM) を追加)
-  csvContent += "\uFEFF" + "Key,Flag,Comment,TargetCell_A,TargetCell_B\r\n";
+  csvContent += "\uFEFF" + "Key,Flag,TargetCell_A,TargetCell_B\r\n";
 
   comparisonResultsCache.forEach(row => {
     // CSVインジェクション対策 + カンマ/改行のエスケープ
@@ -1118,11 +1115,10 @@ function exportResultsToCSV() {
 
     const key = sanitize(row.key);
     const flag = sanitize(row.flag);
-    const comment = sanitize(row.comment); // (現在は常にnull)
     const cellA = sanitize(row.target_cell.a);
     const cellB = sanitize(row.target_cell.b);
 
-    let csvRow = [key, flag, comment, cellA, cellB].join(",");
+    let csvRow = [key, flag, cellA, cellB].join(",");
     csvContent += csvRow + "\r\n";
   });
 

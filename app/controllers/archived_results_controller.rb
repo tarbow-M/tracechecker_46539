@@ -28,7 +28,7 @@ class ArchivedResultsController < ApplicationController
           archived_result_id: @archived_result.id,
           key: result_param["key"],     # (シンボル :key ではなく 文字列 "key" を使用)
           flag: result_param["flag"],
-          comment: result_param["comment"],
+          # comment: result_param["comment"],
           # "target_cell" (Rubyハッシュ) を "json" カラムに保存
           # (MySQL/PostgreSQL両対応のため .to_json は不要、create! が自動変換)
           target_cell: result_param["target_cell"], 

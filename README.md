@@ -91,7 +91,6 @@
 | --------------- | ---------- | ----------- |
 | key             | string     | null: false |
 | flag            | string     | null: false |
-| comment         | text       |
 | target_cell     | jsonb      |
 | archived_result | references | null: false, foreign_key: true |
 
