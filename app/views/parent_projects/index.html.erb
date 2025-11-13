@@ -11,7 +11,7 @@
     %>
   </div>
 
-  <!-- プロジェクト一覧 -->
+  <!-- プロジェクト（業務）一覧 -->
   <div class="bg-white shadow-xl rounded-lg overflow-hidden">
     <div class="p-6">
       <% if @parent_projects.any? %>
@@ -35,14 +35,14 @@
           <% end %>
         </ul>
       <% else %>
-        <!-- プロジェクトが1件もない場合の表示 -->
+        <!-- プロジェクト（業務フォルダ）が1件もない場合の表示 -->
         <div class="text-center py-12">
           <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
           </svg>
-          <h3 class="mt-2 text-sm font-semibold text-gray-900">プロジェクトがありません</h3>
+          <h3 class="mt-2 text-sm font-semibold text-gray-900">業務フォルダがありません</h3>
           <p class="mt-1 text-sm text-gray-500">
-            まずは「新規プロジェクト作成」ボタンから始めましょう。
+            まずは「新規業務作成」ボタンから始めましょう。
           </p>
         </div>
       <% end %>

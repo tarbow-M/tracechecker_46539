@@ -13,11 +13,6 @@ class Template < ApplicationRecord
     data
   end
 
-  # mappingがnilの場合に空のハッシュを返す
-  def mapping
-    read_attribute(:mapping) || {}
-  end
-
   # JSONにシリアライズされる際に、上記で定義した安全なアクセサを使用するよう強制する
   def as_json(options = {})
     # Controllerの `as_json(only: [:id, :name, :range, :mapping])` に対応
@@ -25,7 +20,6 @@ class Template < ApplicationRecord
       # カスタムアクセサの値を強制的にJSONにセットする
       # これにより、たとえDB値がnullでも、アクセサが返す安全なハッシュが使用される
       json['range']   = self.range
-      json['mapping'] = self.mapping
     end
   end
 end
