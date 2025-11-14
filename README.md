@@ -1,98 +1,172 @@
+# アプリケーション名: TraceChecker
 
-## Usersテーブル
+## 概要
 
-| Column             | Type   | Options     |
-| ------------------ | ------ | ----------- |
-| personal_num       | string | null: false |
-| name               | string | null: false |
-| email              | string | null: false, unique:true |
-| encrypted_password | string | null: false |
+TraceCheckerは、**ExcelやCSVファイルなどの電子ドキュメント間のデータ比較（照合）**を効率的に行い、その結果を監査証跡として安全に管理・保存するためのWebアプリケーションです。
 
-### Association
-- has_many :parent_projects
-- has_many :templates
-- has_many :logs
+従来の目視確認や手作業による比較にかかる時間とヒューマンエラーのリスクを削減し、業務の品質と効率化に貢献します。
 
+---
 
-## Templatesテーブル
+##  デプロイ先URL
 
-| Column  | Type       | Options     |
-| ------- | ---------- | ---------------------------- |
-| name    | string     | null: false                  |
-| range   | jsonb      |
-| user    | references | null: false, foreign_key: true |
+https://tracechecker-46539.onrender.com
 
-### Association
-- belongs_to :user
+---
 
+##  テスト用アカウント
 
-## Logsテーブル
+| 項目 | 値 | 備考 |
+| :--- | :--- | :--- |
+| **メールアドレス** | test@example.com | 
+| **パスワード** | password | 
+| **個人番号** | 123456 | (Deviseのカスタムフィールド) |
+| **氏名** | テスト 太郎 | |
 
-| Column      | Type       | Options     |
-| ----------- | ---------- | ----------- |
-| action_type | string     | null: false            |
-| description | text       |
-| user        | references | null: false, foreign_key: true |
-| project     | references | foreign_key: true |
+---
 
-### Association
-- belongs_to :user
-- belongs_to :project, optional: true
+##  利用方法
 
+### 1. 業務フォルダの作成
+1.  ログイン後、業務一覧画面から「新規業務作成」ボタンをクリックします。
+2.  業務名（例: 「T社 2025年度監査」）を入力してフォルダを作成します。
 
-## ParentProjects テーブル
+### 2. ファイルのアップロード
+1.  作成した業務フォルダをクリックし詳細ページへ移動します。
+2.  「照合ファイルアップロード」セクションで、比較したいExcel (`.xlsx`, `.xlsm`) または CSV ファイルを選択し、アップロードします。
 
-| Column  | Type       | Options     |
-| ------- | ---------- | ----------- |
-| name    | string     | null: false |
-| user    | references | null: false, foreign_key: true |
+### 3. 照合の実行と結果の保存
+1.  照合作業フォルダを作成して「照合実行」画面へ進み、「資料A（比較元）」と「資料B（比較先）」のドロップダウンから比較対象のファイルを選択します。
+2.  「データ範囲モード開始」ボタンをクリックしプレビュー画面で、マウスのドラッグ操作を使って比較したいデータ範囲を選択します。
+3.  「照合実行」ボタンをクリックすると、順次マッチング方式でデータが比較され、結果がハイライト表示されます。（一致: 緑、差異: 赤、片方のみ: 黄）
+4.  「照合結果を保存」ボタンから結果に名前を付けて保存すると、その時点の照合作業が**ロック（確定済み）**されます。
+5.  ロック解除は、照合実行画面の「再確認モードへ移行」ボタンから可能です。
 
-### Association
-- has_many :projects
-- has_many_attached :files (ActiveStorage)
-- belongs_to :user
+---
 
+##  アプリケーションを作成した背景
 
-## Projectsテーブル（Child Project）
+前職での膨大な照合作業が身体的にも精神的にも負担に感じ、「人が疲弊しながら同じチェックを繰り返す」状況を変えたいと思ったからです。
 
-| Column         | Type       | Options     |
-| -------------- | ---------- | ----------- |
-| name           | string     | null: false |
-| status         | string     |
-| is_locked      | boolean    | default: false   |
-| parent_project | references | null: false, foreign_key: true |
+---
 
-### Association
-- belongs_to :parent_project
-- has_many :archived_results, foreign_key: :child_project_id
-- has_many :logs
+##  実装した主な機能
+
+### 1. ファイルのアップロードと管理
+
+ファイル（Excel/CSV）を業務フォルダごとに一元管理できます。アップロード後、即座に削除も可能です。
 
 
-## ArchivedResultsテーブル
 
-| Column        | Type       | Options                                          |
-| ------------- | ---------- | ------------------------------------------------ |
-| name          | string     | null: false                                      |
-| diff_count    | integer    |                                                  |
-| preview_data  | json       |                                                  |
-| file_a_id     | references | foreign_key: { to_table: :active_storage_attachments } |
-| file_b_id     | references | foreign_key: { to_table: :active_storage_attachments } |
-| child_project | references | null: false, foreign_key: { to_table: :projects }  |
+### 2. 視覚的なセル範囲指定と照合実行
 
-### Association
-- has_many :trace_results
-- belongs_to :child_project, class_name: 'Project'
-- belongs_to :file_a, class_name: 'ActiveStorage::Attachment'
-- belongs_to :file_b, class_name: 'ActiveStorage::Attachment'
+マウスのドラッグ操作で直感的に比較対象のセル範囲を選択できます。範囲選択後、比較ボタン一つで差異を即座にハイライト表示します。
 
-## TraceResultsテーブル
 
-| Column          | Type       | Options     |
-| --------------- | ---------- | ----------- |
-| key             | string     | null: false |
-| flag            | string     | null: false |
-| target_cell     | jsonb      |
-| archived_result | references | null: false, foreign_key: true |
 
-### Association
-- belongs_to :archived_result
+### 3. 証跡の確定（ロック機能）と履歴保存
+
+照合結果を「証跡」として保存する際、作業全体をロック状態（確定済み）に移行します。これにより、誰が、いつ、どのような結果をもって作業を完了させたかを担保します。
+
+
+
+### 4. 共通照合エリア（テンプレート）の保存
+
+よく使う照合範囲（例: KPIサマリー行、月次売上合計セルなど）を「引用照合エリア」としてテンプレート保存し、他のプロジェクトでも再利用できます。これにより、範囲選択の手間を省くことが可能です。
+
+
+
+### 5. 操作ログ機能
+
+プロジェクトの作成、ファイルの削除、証跡の保存といった全ての重要な操作を記録し、後からログ一覧で確認できます。
+
+
+---
+
+##  実装予定の機能
+
+* **PDFファイルへの対応**: PDF上で範囲選択して文字を抽出しプレビューに表示させることでPDFファイルも比較を可能にします。
+* **共有機能追加**: 上司承認や回覧を楽にするため共有機能を導入します。
+* **コメント機能の追加**: 結果に対しコメントできる機能を追加することで上司チェックを担保します。
+
+---
+
+##  データベース設計
+[![Image from Gyazo](https://i.gyazo.com/317d6d56306ce47018290f584f6ab9e9.png)](https://gyazo.com/317d6d56306ce47018290f584f6ab9e9)
+
+---
+
+##  画面遷移図
+[![Image from Gyazo](https://i.gyazo.com/49ec63a52ee08f5c1ea48d468b2441d2.png)](https://gyazo.com/49ec63a52ee08f5c1ea48d468b2441d2)
+
+---
+
+## 開発環境
+
+| 項目 | 詳細 |
+| :--- | :--- |
+| **言語** | Ruby (3.2.0), JavaScript |
+| **フレームワーク** | Ruby on Rails (7.1.0) |
+| **データベース** | 開発: MySQL,  本番: PostgreSQL |
+| **フロントエンド** | Hotwire (Turbo/Stimulus), Tailwind CSS, JavaScript (Vanilla) |
+| **認証** | Devise, Basic認証 |
+| **ファイル操作** | Active Storage, roo, creek |
+
+---
+
+## ローカルでの動作方法
+
+### 1. リポジトリのクローン
+
+ターミナルで以下を実行してください
+```bash
+git clone https://github.com/tarbow-M/tracechecker_46539
+cd tracechecker_46539
+```
+
+### 2. データベース設定の調整
+
+config/database.yml を開き、MySQLまたはPostgreSQLの設定（username, passwordなど）をローカル環境に合わせて更新してください。
+
+### 3. 環境変数と依存関係のセットアップ
+
+ターミナルで以下を実行し、Basic認証用の環境変数を設定してください
+```bash
+# GemとNPMパッケージのインストール
+bundle install
+npm install
+
+# データベースの作成、マイグレーション、シードデータの投入
+bin/rails db:setup
+
+# Basic認証用の環境変数を設定 (例: .envを使用)
+# export BASIC_AUTH_USER="admin"
+# export BASIC_AUTH_PASSWORD="password"
+```
+
+### 4. サーバーの起動
+
+Procfile.devに基づいて、Railsサーバー、JavaScriptビルド、CSS監視を起動します。
+```bash
+./bin/dev
+```
+---
+
+## 工夫したポイント
+* ページを少なくすることで画面遷移の煩わしさを低減し作業スピードの向上を図りました。
+* ユーザーが照合箇所を選択する形式にすることで多様な資料にも対応できる他、帳票の変更にも柔軟に対応できるようにしました。
+* ユーザーが照合箇所を選択する形式により、自動化による業務のブラックボックス化を防ぎながら作業効率の向上を図りました。
+* 照合結果をセルに色付けすることにより一目で一致・不一致が分かるようにしました。
+* 証跡を残すことで、複数の照合資料に対しても作業者自身の進捗管理が容易になるほか、上司も順序だてて結果を確認できるため負担の軽減が狙えます。
+* 照合作業フォルダを作成することで、3枚以上の資料に対しても2枚ずつどの組み合わせで照合を進めたか一目でわかるようにしました。これにより、複数資料においても資料をどの順番でどの部分を照合すれば良いかが一目でわかるため、後輩指導の際に役立ちます。
+---
+
+## 改善点
+
+* テストコードの導入
+---
+
+## 制作時間
+
+* 2週間
+---
